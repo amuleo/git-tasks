@@ -1,8 +1,7 @@
 /* ════════════════════════════════════════════════════════════
    🔎 مودال جزئیات تسک
-   ترتیب دکمه‌ها: ویرایش / حذف / پین / انجام شد
-   ✅ پین فقط برای تسک‌های در انتظار (نه انجام‌شده)
-   ✅ مودال فوری بسته می‌شه
+   ✅ پین فقط برای تسک‌های در انتظار
+   ✅ i18n کامل پیام خطا
    ════════════════════════════════════════════════════════════ */
 
 import { App, Modal } from 'obsidian';
@@ -34,6 +33,9 @@ export class TaskDetailsModal extends Modal {
     private render(): void {
         const { contentEl } = this;
         contentEl.empty();
+        /* 🆕 کلاس اختصاصی برای استایل مودال */
+        contentEl.addClass('git-tasks-modal-content');
+
         const lang = this.plugin.settings.language;
         applyDirection(contentEl, lang);
 
@@ -41,15 +43,11 @@ export class TaskDetailsModal extends Modal {
         else this.renderViewMode(contentEl);
     }
 
-    /* ═══════════════════════════════════════════════════════
-       حالت نمایش
-       ═══════════════════════════════════════════════════════ */
     private renderViewMode(parent: HTMLElement): void {
         const lang = this.plugin.settings.language;
 
         const header = parent.createDiv({ cls: 'git-tasks-details-header' });
         header.createEl('h3', { text: t(lang, 'details_title') });
-        /* 🔥 بج پین فقط برای تسک‌های در انتظار */
         if (this.task.pinned && !this.task.completed) {
             header.createSpan({
                 cls: 'git-tasks-pinned-badge',
@@ -59,7 +57,6 @@ export class TaskDetailsModal extends Modal {
 
         parent.createEl('h4', { text: this.task.title, cls: 'git-tasks-details-title' });
 
-        /* متادیتا */
         const meta = parent.createDiv({ cls: 'git-tasks-details-meta' });
         meta.createEl('div', {
             text: `${t(lang, 'details_created')}: ${formatDate(this.task, this.plugin.settings.useJalaliDate)}`,
@@ -84,10 +81,8 @@ export class TaskDetailsModal extends Modal {
         const descBox = parent.createDiv({ cls: 'git-tasks-details-desc' });
         descBox.setText(this.task.description || t(lang, 'details_no_description'));
 
-        /* دکمه‌ها */
         const actions = parent.createDiv({ cls: 'git-tasks-modal-buttons' });
 
-        /* ۱. ویرایش */
         const editBtn = actions.createEl('button', { text: t(lang, 'btn_edit') });
         editBtn.onclick = () => {
             this.editing = true;
@@ -97,14 +92,13 @@ export class TaskDetailsModal extends Modal {
             this.render();
         };
 
-        /* ۲. حذف */
         const delBtn = actions.createEl('button', {
             text: t(lang, 'btn_delete'),
             cls: 'mod-warning',
         });
         delBtn.onclick = () => this.handleDelete();
 
-        /* ۳. پین / آنپین — 🔥 فقط برای تسک‌های در انتظار */
+        /* پین فقط برای در انتظار */
         if (!this.task.completed) {
             const pinBtn = actions.createEl('button', {
                 text: this.task.pinned ? t(lang, 'btn_unpin') : t(lang, 'btn_pin'),
@@ -112,7 +106,6 @@ export class TaskDetailsModal extends Modal {
             pinBtn.onclick = () => this.handleTogglePin();
         }
 
-        /* ۴. انجام شد / برگرداندن */
         if (this.task.completed) {
             const pendingBtn = actions.createEl('button', {
                 text: t(lang, 'btn_mark_pending'),
@@ -128,9 +121,6 @@ export class TaskDetailsModal extends Modal {
         }
     }
 
-    /* ═══════════════════════════════════════════════════════
-       حالت ویرایش
-       ═══════════════════════════════════════════════════════ */
     private renderEditMode(parent: HTMLElement): void {
         const lang = this.plugin.settings.language;
         parent.createEl('h3', { text: t(lang, 'edit_title') });
@@ -163,16 +153,11 @@ export class TaskDetailsModal extends Modal {
         saveBtn.onclick = () => this.handleSave();
     }
 
-    /* ═══════════════════════════════════════════════════════
-       پین / آنپین — بستن فوری
-       ═══════════════════════════════════════════════════════ */
     private async handleTogglePin(): Promise<void> {
         if (this.busy) return;
         this.busy = true;
-
         const lang = this.plugin.settings.language;
         const res = await this.plugin.taskManager.togglePin(this.task);
-
         if (res.ok) {
             const msgKey = res.pinned ? 'notice_task_pinned' : 'notice_task_unpinned';
             this.plugin.toastManager.show(t(lang, msgKey), 'success');
@@ -183,23 +168,15 @@ export class TaskDetailsModal extends Modal {
             }
         } else {
             this.busy = false;
-            this.plugin.toastManager.show(
-                t(lang, 'notice_sync_fail', { error: 'pin failed' }),
-                'error'
-            );
+            this.plugin.toastManager.show(t(lang, 'notice_pin_failed'), 'error');
         }
     }
 
-    /* ═══════════════════════════════════════════════════════
-       انجام / برگرداندن — بستن فوری
-       ═══════════════════════════════════════════════════════ */
     private async handleComplete(): Promise<void> {
         if (this.busy) return;
         this.busy = true;
-
         const lang = this.plugin.settings.language;
         const ok = await this.plugin.taskManager.completeTask(this.task);
-
         if (ok) {
             this.plugin.toastManager.show(t(lang, 'notice_task_completed'), 'success');
             this.onDone();
@@ -209,20 +186,15 @@ export class TaskDetailsModal extends Modal {
             }
         } else {
             this.busy = false;
-            this.plugin.toastManager.show(
-                t(lang, 'notice_sync_fail', { error: 'update failed' }),
-                'error'
-            );
+            this.plugin.toastManager.show(t(lang, 'notice_update_failed'), 'error');
         }
     }
 
     private async handleUncomplete(): Promise<void> {
         if (this.busy) return;
         this.busy = true;
-
         const lang = this.plugin.settings.language;
         const ok = await this.plugin.taskManager.uncompleteTask(this.task);
-
         if (ok) {
             this.plugin.toastManager.show(t(lang, 'notice_task_updated'), 'success');
             this.onDone();
@@ -232,33 +204,23 @@ export class TaskDetailsModal extends Modal {
             }
         } else {
             this.busy = false;
-            this.plugin.toastManager.show(
-                t(lang, 'notice_sync_fail', { error: 'update failed' }),
-                'error'
-            );
+            this.plugin.toastManager.show(t(lang, 'notice_update_failed'), 'error');
         }
     }
 
-    /* ═══════════════════════════════════════════════════════
-       ذخیره ویرایش — بستن فوری
-       ═══════════════════════════════════════════════════════ */
     private async handleSave(): Promise<void> {
         if (this.busy) return;
         const lang = this.plugin.settings.language;
-
         if (!this.editTitle.trim()) {
             this.plugin.toastManager.show(t(lang, 'notice_no_title'), 'warning');
             return;
         }
-
         this.busy = true;
-
         const ok = await this.plugin.taskManager.updateTask(this.task, {
             title: this.editTitle.trim(),
             description: this.editDescription.trim(),
             category: this.editCategory,
         });
-
         if (ok) {
             this.plugin.toastManager.show(t(lang, 'notice_task_updated'), 'success');
             this.onDone();
@@ -268,26 +230,16 @@ export class TaskDetailsModal extends Modal {
             }
         } else {
             this.busy = false;
-            this.plugin.toastManager.show(
-                t(lang, 'notice_sync_fail', { error: 'update failed' }),
-                'error'
-            );
+            this.plugin.toastManager.show(t(lang, 'notice_update_failed'), 'error');
         }
     }
 
-    /* ═══════════════════════════════════════════════════════
-       حذف نرم — بستن فوری
-       ═══════════════════════════════════════════════════════ */
     private async handleDelete(): Promise<void> {
         if (this.busy) return;
         const lang = this.plugin.settings.language;
-
         if (!window.confirm(t(lang, 'confirm_delete_body'))) return;
-
         this.busy = true;
-
         const ok = await this.plugin.taskManager.softDelete(this.task);
-
         if (ok) {
             this.plugin.toastManager.show(t(lang, 'notice_task_deleted'), 'success');
             this.onDone();
@@ -297,10 +249,7 @@ export class TaskDetailsModal extends Modal {
             }
         } else {
             this.busy = false;
-            this.plugin.toastManager.show(
-                t(lang, 'notice_sync_fail', { error: 'delete failed' }),
-                'error'
-            );
+            this.plugin.toastManager.show(t(lang, 'notice_delete_failed'), 'error');
         }
     }
 
