@@ -1,0 +1,309 @@
+/* ════════════════════════════════════════════════════════════
+   🎨 استایل‌های Git Tasks — استفاده حداکثری از استایل آبسیدین
+   فقط جاهایی که لازمه استایل اختصاصی زده شده
+   ════════════════════════════════════════════════════════════ */
+
+/* ───── کانتینر پنل ───── */
+.git-tasks-panel {
+    padding: 8px 10px;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow-y: auto;
+}
+
+/* ───── هدر ───── */
+.git-tasks-header {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.git-tasks-header-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.git-tasks-title {
+    margin: 0;
+    font-size: var(--font-ui-medium);
+    font-weight: 600;
+    color: var(--text-normal);
+}
+
+.git-tasks-header-actions {
+    display: flex;
+    gap: 4px;
+}
+
+/* ───── dropdown دسته‌بندی ───── */
+.git-tasks-category-row {
+    display: flex;
+    gap: 6px;
+}
+
+.git-tasks-category-select {
+    flex: 1;
+    width: 100%;
+}
+
+/* ───── بدنه ───── */
+.git-tasks-body {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1;
+}
+
+/* ───── کارت تسک ───── */
+.git-tasks-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 10px 12px;
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 8px;
+    background: var(--background-secondary);
+    cursor: pointer;
+    transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.git-tasks-card:hover {
+    border-color: var(--interactive-accent);
+    background: var(--background-secondary-alt);
+}
+
+.git-tasks-card-checkbox {
+    display: flex;
+    align-items: center;
+    padding-top: 2px;
+    flex-shrink: 0;
+}
+
+.git-tasks-card-checkbox input[type="checkbox"] {
+    cursor: pointer;
+}
+
+.git-tasks-card-body {
+    flex: 1;
+    min-width: 0;
+}
+
+.git-tasks-card-title {
+    font-size: var(--font-ui-small);
+    font-weight: 500;
+    color: var(--text-normal);
+    word-wrap: break-word;
+    margin-bottom: 4px;
+}
+
+.git-tasks-card-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    font-size: var(--font-ui-smaller);
+    color: var(--text-muted);
+}
+
+.git-tasks-card-date,
+.git-tasks-card-cat {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+}
+
+.git-tasks-icon {
+    display: inline-flex;
+    align-items: center;
+}
+
+.git-tasks-icon svg {
+    width: 12px;
+    height: 12px;
+}
+
+/* ───── حالت خالی ───── */
+.git-tasks-empty {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--text-muted);
+}
+
+.git-tasks-empty-title {
+    font-size: var(--font-ui-medium);
+    font-weight: 500;
+    margin-bottom: 4px;
+}
+
+.git-tasks-empty-hint {
+    font-size: var(--font-ui-smaller);
+    opacity: 0.8;
+}
+
+/* ───── حالت لودینگ ───── */
+.git-tasks-loading {
+    text-align: center;
+    padding: 30px;
+    color: var(--text-muted);
+    font-size: var(--font-ui-smaller);
+}
+
+/* ───── دکمه نمایش بیشتر ───── */
+.git-tasks-show-more {
+    padding: 8px;
+    margin-top: 4px;
+    background: transparent;
+    border: 1px dashed var(--background-modifier-border);
+    border-radius: 6px;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: var(--font-ui-smaller);
+    transition: all 0.15s ease;
+}
+
+.git-tasks-show-more:hover {
+    border-color: var(--interactive-accent);
+    color: var(--text-accent);
+    border-style: solid;
+}
+
+/* ───── مودال‌ها ───── */
+.git-tasks-modal-buttons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 16px;
+    padding-top: 12px;
+    border-top: 1px solid var(--background-modifier-border);
+}
+
+.git-tasks-input,
+.git-tasks-textarea {
+    width: 100%;
+    margin-bottom: 12px;
+    padding: 6px 8px;
+    border-radius: 6px;
+    border: 1px solid var(--background-modifier-border);
+    background: var(--background-primary);
+    color: var(--text-normal);
+    font-family: inherit;
+}
+
+.git-tasks-input:focus,
+.git-tasks-textarea:focus {
+    border-color: var(--interactive-accent);
+    outline: none;
+}
+
+.git-tasks-details-title {
+    margin: 8px 0 12px 0;
+    font-size: var(--font-ui-large);
+}
+
+.git-tasks-details-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: var(--font-ui-smaller);
+    color: var(--text-muted);
+    margin-bottom: 16px;
+    padding: 10px;
+    background: var(--background-secondary);
+    border-radius: 6px;
+}
+
+.git-tasks-details-desc {
+    padding: 10px;
+    background: var(--background-secondary);
+    border-radius: 6px;
+    font-size: var(--font-ui-small);
+    line-height: 1.7;
+    white-space: pre-wrap;
+    margin-bottom: 16px;
+}
+
+/* ════════════════════════════════════════════════════════════
+   ⚙️ استایل اختصاصی تنظیمات (چون آبسیدین از RTL پشتیبانی کامل نداره)
+   ════════════════════════════════════════════════════════════ */
+
+/* ───── RTL: چک‌باکس‌ها برعکس ───── */
+.git-tasks-rtl .checkbox-container {
+    direction: rtl;
+}
+
+/* چک‌باکس‌ها در حالت RTL به سمت راست می‌رن */
+.git-tasks-rtl input[type="checkbox"] {
+    margin-inline-end: 0;
+    margin-inline-start: 5px;
+}
+
+/* ───── RTL: توگل‌ها برعکس ───── */
+/* توگل آبسیدین به صورت پیش‌فرض thumb رو با translateX جابجا می‌کنه */
+.git-tasks-rtl .checkbox-container::after {
+    transform: translateX(16px);
+}
+
+.git-tasks-rtl .checkbox-container.is-enabled::after {
+    transform: translateX(0);
+}
+
+/* ───── RTL: منوهای dropdown ───── */
+.git-tasks-rtl .dropdown {
+    direction: rtl;
+    text-align: right;
+}
+
+/* ───── RTL: بچهای تنظیمات ───── */
+.git-tasks-rtl .setting-item {
+    direction: rtl;
+    text-align: right;
+}
+
+.git-tasks-rtl .setting-item-info {
+    text-align: right;
+}
+
+/* ───── RTL: ورودی‌های متنی ───── */
+.git-tasks-rtl input[type="text"],
+.git-tasks-rtl input[type="number"],
+.git-tasks-rtl input[type="password"],
+.git-tasks-rtl textarea {
+    direction: rtl;
+    text-align: right;
+}
+
+/* ───── RTL: دکمه‌های توی مودال ───── */
+.git-tasks-rtl .git-tasks-modal-buttons {
+    flex-direction: row-reverse;
+}
+
+/* ════════════════════════════════════════════════════════════
+   📱 بهینه‌سازی موبایل
+   ════════════════════════════════════════════════════════════ */
+
+@media (max-width: 600px) {
+    .git-tasks-panel {
+        padding: 6px 8px;
+    }
+
+    .git-tasks-card {
+        padding: 9px 10px;
+    }
+
+    .git-tasks-title {
+        font-size: 14px;
+    }
+
+    .git-tasks-card-title {
+        font-size: 13.5px;
+    }
+
+    .git-tasks-card-meta {
+        font-size: 11px;
+    }
+}
