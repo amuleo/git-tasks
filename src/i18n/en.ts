@@ -51,7 +51,7 @@ export default {
     btn_save: 'Save',
     btn_create: 'Create',
     btn_mark_done: 'Done',
-    btn_mark_pending: 'Restore',   /* 🆕 تک کلمه */
+    btn_mark_pending: 'Restore',
     btn_edit: 'Edit',
     btn_delete: 'Delete',
     btn_pin: 'Pin',
@@ -99,6 +99,7 @@ export default {
     settings_sync_after_edit: 'Sync after changes',
     settings_sync_after_edit_desc: 'Push changes to GitHub right away',
 
+    /* اعلان‌های عمومی */
     notice_task_created: 'Task created',
     notice_task_updated: 'Task updated',
     notice_task_completed: 'Task completed',
@@ -111,4 +112,11 @@ export default {
     notice_fill_repo: 'Please select a repository',
     notice_no_title: 'Title is required',
     notice_index_ok: 'Stats updated',
+
+    /* 🆕 اعلان‌های خطای اختصاصی */
+    notice_create_failed: 'Could not create task',
+    notice_update_failed: 'Could not update task',
+    notice_delete_failed: 'Could not delete task',
+    notice_pin_failed: 'Could not update pin',
+    notice_unpin_failed: 'Could not remove pin',
 };
