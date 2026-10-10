@@ -1,5 +1,5 @@
 /* ════════════════════════════════════════════════════════════
-   🎨 استایل‌های Git Tasks — طراحی تازه، جداکننده‌های صاف، RTL بهتر
+   🎨 استایل‌های Git Tasks — طراحی تازه، جداکننده‌های صاف، RTL کامل
    ════════════════════════════════════════════════════════════ */
 
 /* ───── کانتینر پنل ───── */
@@ -368,8 +368,61 @@
 }
 
 /* ═══════════════════════════════════════════════════════════
-   ⚙️ رفع باگ RTL تنظیمات
+   ⚙️ تنظیمات (جداکننده‌های صاف + RTL کامل)
    ═══════════════════════════════════════════════════════════ */
+
+/* ───── جهت کلی Setting ───── */
+.git-tasks-rtl .setting-item {
+    direction: rtl;
+}
+
+.git-tasks-rtl .setting-item-info {
+    text-align: right;
+}
+
+/* 🔥 رفع باگ اصلی توگل‌ها:
+   Obsidian به صورت پیش‌فرض margin-left: auto می‌ذاره که کنترل‌ها رو
+   به سمت راست هل می‌ده. توی RTL باید برعکسش کنیم */
+.git-tasks-rtl .setting-item-control {
+    margin-left: 0 !important;
+    margin-right: auto !important;
+}
+
+/* ───── توگل: داخلش LTR باشه تا thumb درست حرکت کنه ───── */
+.git-tasks-rtl .checkbox-container {
+    direction: ltr !important;
+}
+
+/* ───── چک‌باکس ───── */
+.git-tasks-rtl input[type="checkbox"] {
+    margin-inline-end: 0;
+    margin-inline-start: 5px;
+}
+
+/* ───── dropdown ───── */
+.git-tasks-rtl .dropdown {
+    direction: rtl;
+    text-align: right;
+}
+
+/* ───── ورودی‌های متنی ───── */
+.git-tasks-rtl input[type="text"]:not([dir="ltr"]),
+.git-tasks-rtl input[type="number"]:not([dir="ltr"]),
+.git-tasks-rtl textarea {
+    direction: rtl;
+    text-align: right;
+}
+
+/* ورودی‌های اجباری LTR (توکن، مخزن، شاخه) همیشه چپ‌چین */
+.git-tasks-settings input[dir="ltr"] {
+    direction: ltr !important;
+    text-align: left !important;
+}
+
+/* ───── دکمه‌های مودال ───── */
+.git-tasks-rtl .git-tasks-modal-buttons {
+    flex-direction: row-reverse;
+}
 
 /* ───── جداکننده‌های صاف (بدون گردی) ───── */
 .git-tasks-settings .setting-item {
@@ -385,61 +438,10 @@
     border-top: none !important;
 }
 
-/* جداکننده‌ی heading هم صاف */
 .git-tasks-settings .setting-item-heading {
     border-radius: 0 !important;
     border-bottom: 1px solid var(--background-modifier-border) !important;
     padding-bottom: 6px;
-}
-
-/* ───── RTL: تنظیمات ───── */
-.git-tasks-rtl .setting-item {
-    direction: rtl;
-}
-
-.git-tasks-rtl .setting-item-info {
-    text-align: right;
-}
-
-/* ───── RTL: توگل‌ها (رفع باگ) ───── */
-/* مشکل: توگل Obsidian در RTL به سمت اشتباه می‌ره. راه‌حل: direction:ltr فقط روی خود توگل */
-.git-tasks-rtl .checkbox-container {
-    direction: ltr !important;
-}
-
-.git-tasks-rtl .checkbox-container::after {
-    /* پیش‌فرض: مقدار translateX مثبت برای روشن */
-}
-
-/* ───── RTL: چک‌باکس‌ها ───── */
-.git-tasks-rtl input[type="checkbox"] {
-    margin-inline-end: 0;
-    margin-inline-start: 5px;
-}
-
-/* ───── RTL: dropdown ───── */
-.git-tasks-rtl .dropdown {
-    direction: rtl;
-    text-align: right;
-}
-
-/* ───── RTL: ورودی‌های متنی ───── */
-.git-tasks-rtl input[type="text"]:not([dir="ltr"]),
-.git-tasks-rtl input[type="number"]:not([dir="ltr"]),
-.git-tasks-rtl textarea {
-    direction: rtl;
-    text-align: right;
-}
-
-/* ورودی‌های اجباری LTR (توکن، repo، branch) همیشه چپ‌چین */
-.git-tasks-settings input[dir="ltr"] {
-    direction: ltr !important;
-    text-align: left !important;
-}
-
-/* ───── RTL: دکمه‌های مودال ───── */
-.git-tasks-rtl .git-tasks-modal-buttons {
-    flex-direction: row-reverse;
 }
 
 /* ═══════════════════════════════════════════════════════════
