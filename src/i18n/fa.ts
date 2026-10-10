@@ -5,11 +5,17 @@
 export default {
     plugin_name: 'تسک‌های گیت',
 
+    /* ───── تب‌ها ───── */
+    tab_pending: 'تسک ها',
+    tab_completed: 'انجام شده',
+
     /* ───── پنل ───── */
-    panel_title: 'کارها',
-    panel_empty: 'همه‌ی کارها انجام شد!',
-    panel_empty_hint: 'برای شروع، یه کار جدید بساز',
-    panel_new_task: 'کار جدید',
+    panel_title: 'تسک ها',
+    panel_title_completed: 'تسک های انجام شده',
+    panel_empty: 'همه‌ی تسک‌ها انجام شد!',
+    panel_empty_hint: 'برای شروع، یه تسک جدید بساز',
+    panel_empty_completed: 'هنوز تسکی انجام نشده',
+    panel_new_task: 'تسک جدید',
     panel_reload: 'بروزرسانی',
     panel_show_more: 'نمایش بیشتر',
     panel_loading: 'در حال لود...',
@@ -17,39 +23,48 @@ export default {
     panel_all_categories: 'همه‌ی دسته‌ها',
     panel_no_category: 'بدون دسته',
 
-    /* ───── وضعیت تسک ───── */
+    /* ───── کارت‌های آماری ───── */
+    stats_today: 'امروز',
+    stats_yesterday: 'دیروز',
+    stats_this_week: 'این هفته',
+    stats_last_month: 'ماه گذشته',
+    stats_this_year: 'امسال',
+    stats_total: 'کل',
+
+    /* ───── تسک ───── */
     task_pending: 'در انتظار',
     task_done: 'انجام شده',
-    task_completing: 'در حال ثبت...',
+    pinned_badge: 'پین شده',
 
-    /* ───── مودال ساخت/ویرایش ───── */
-    create_title: 'کار جدید',
-    edit_title: 'ویرایش کار',
+    /* ───── مودال‌ها ───── */
+    create_title: 'تسک جدید',
+    edit_title: 'ویرایش تسک',
+    details_title: 'جزئیات تسک',
     field_title: 'عنوان',
     field_title_placeholder: 'چی کار کنم؟',
     field_description: 'توضیحات (اختیاری)',
     field_description_placeholder: 'جزئیات رو بنویس...',
     field_category: 'دسته‌بندی',
-    btn_cancel: 'لغو',
-    btn_save: 'ذخیره',
-    btn_create: 'ایجاد',
-
-    /* ───── مودال جزئیات ───── */
-    details_title: 'جزئیات کار',
     details_created: 'تاریخ ساخت',
+    details_completed: 'تاریخ انجام',
     details_status: 'وضعیت',
     details_category: 'دسته‌بندی',
     details_description: 'توضیحات',
     details_no_description: 'بدون توضیحات',
+
+    /* ───── دکمه‌ها ───── */
+    btn_cancel: 'لغو',
+    btn_save: 'ذخیره',
+    btn_create: 'ایجاد',
     btn_mark_done: 'انجام شد',
+    btn_mark_pending: 'برگردون به در انتظار',
     btn_edit: 'ویرایش',
     btn_delete: 'حذف',
+    btn_pin: 'پین کردن',
+    btn_unpin: 'برداشتن پین',
 
-    /* ───── تأیید حذف ───── */
-    confirm_delete_title: 'کار حذف بشه؟',
-    confirm_delete_body: 'کار از لیست مخفی می‌شه.',
-    confirm_yes: 'بله، حذف کن',
-    confirm_no: 'نه',
+    /* ───── تأیید ───── */
+    confirm_delete_body: 'تسک از لیست مخفی می‌شه.',
 
     /* ───── تنظیمات ───── */
     settings_title: 'تنظیمات تسک‌های گیت',
@@ -59,7 +74,7 @@ export default {
 
     settings_github_section: 'اتصال به گیت‌هاب',
     settings_token: 'توکن دسترسی شخصی',
-    settings_token_desc: 'از github.com/settings/tokens بساز (با اسکوپ repo)',
+    settings_token_desc: 'از github.com/settings/tokens بساز (اسکوپ repo)',
     settings_token_placeholder: 'ghp_...',
     settings_test_connection: 'تست اتصال',
     settings_testing: 'در حال تست...',
@@ -72,31 +87,37 @@ export default {
     settings_branch: 'شاخه',
     settings_branch_desc: 'معمولاً main یا master',
     settings_test_first: 'اول اتصال رو تست کن تا مخزن‌ها لود بشن',
+    settings_repo_init: 'راه‌اندازی مخزن',
+    settings_repo_init_desc: 'ساخت فایل‌های _categories.json و _index.json اگه نباشن',
+    settings_repo_init_btn: 'الان راه‌اندازی کن',
+    settings_repo_init_ok: 'مخزن راه‌اندازی شد',
+    settings_repo_init_fail: 'راه‌اندازی ناموفق: {error}',
 
     settings_display_section: 'نمایش',
-    settings_jalali: 'استفاده از تاریخ شمسی',
+    settings_jalali: 'تاریخ شمسی',
     settings_jalali_desc: 'نمایش تاریخ‌ها به شمسی',
-    settings_per_page: 'تعداد کار در هر صفحه',
-    settings_per_page_desc: 'هر بار چند کار لود بشه',
+    settings_per_page: 'تعداد تسک در هر صفحه',
+    settings_per_page_desc: 'هر بار چند تسک لود بشه',
 
     settings_sync_section: 'همگام‌سازی خودکار',
     settings_sync_on_open: 'همگام‌سازی هنگام باز شدن پنل',
     settings_sync_on_open_desc: 'هر بار پنل رو باز می‌کنی، بروزرسانی کن',
-    settings_sync_interval: 'همگام‌سازی هر چند دقیقه',
-    settings_sync_interval_desc: '۰ = غیرفعال. مثلاً ۱۵',
+    settings_sync_interval: 'فاصله‌ی همگام‌سازی (دقیقه)',
+    settings_sync_interval_desc: 'برای ۳۰ ثانیه، 0.5 رو بزن. ۰ = غیرفعال',
     settings_sync_after_edit: 'همگام‌سازی بعد از تغییرات',
     settings_sync_after_edit_desc: 'تغییرات فوری به گیت‌هاب فرستاده بشن',
 
     /* ───── اعلان‌ها ───── */
-    notice_task_created: 'کار ساخته شد',
-    notice_task_updated: 'کار ویرایش شد',
-    notice_task_completed: 'کار انجام شد',
-    notice_task_deleted: 'کار حذف شد',
-    notice_sync_ok: 'کارها بروزرسانی شدن',
+    notice_task_created: 'تسک ساخته شد',
+    notice_task_updated: 'تسک ویرایش شد',
+    notice_task_completed: 'تسک انجام شد',
+    notice_task_deleted: 'تسک حذف شد',
+    notice_task_pinned: 'تسک پین شد',
+    notice_task_unpinned: 'پین تسک برداشته شد',
+    notice_sync_ok: 'تسک‌ها بروزرسانی شدن',
     notice_sync_fail: 'همگام‌سازی ناموفق: {error}',
     notice_fill_token: 'اول توکن رو وارد کن',
     notice_fill_repo: 'اول یه مخزن انتخاب کن',
     notice_no_title: 'عنوان الزامیه',
-    notice_repo_empty: 'مخزن خالیه یا پیدا نشد',
-    notice_categories_fail: 'دسته‌بندی‌ها لود نشدن',
+    notice_index_ok: 'آمار بروزرسانی شد',
 };
