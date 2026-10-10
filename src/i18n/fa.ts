@@ -5,11 +5,9 @@
 export default {
     plugin_name: 'تسک‌های گیت',
 
-    /* ───── تب‌ها ───── */
     tab_pending: 'تسک ها',
     tab_completed: 'انجام شده',
 
-    /* ───── پنل ───── */
     panel_title: 'تسک ها',
     panel_title_completed: 'تسک های انجام شده',
     panel_empty: 'همه‌ی تسک‌ها انجام شد!',
@@ -23,7 +21,6 @@ export default {
     panel_all_categories: 'همه‌ی دسته‌ها',
     panel_no_category: 'بدون دسته',
 
-    /* ───── کارت‌های آماری ───── */
     stats_today: 'امروز',
     stats_yesterday: 'دیروز',
     stats_this_week: 'این هفته',
@@ -31,12 +28,10 @@ export default {
     stats_this_year: 'امسال',
     stats_total: 'کل',
 
-    /* ───── تسک ───── */
     task_pending: 'در انتظار',
     task_done: 'انجام شده',
     pinned_badge: 'پین شده',
 
-    /* ───── مودال‌ها ───── */
     create_title: 'تسک جدید',
     edit_title: 'ویرایش تسک',
     details_title: 'جزئیات تسک',
@@ -52,21 +47,18 @@ export default {
     details_description: 'توضیحات',
     details_no_description: 'بدون توضیحات',
 
-    /* ───── دکمه‌ها ───── */
     btn_cancel: 'لغو',
     btn_save: 'ذخیره',
     btn_create: 'ایجاد',
     btn_mark_done: 'انجام شد',
-    btn_mark_pending: 'برگردون به در انتظار',
+    btn_mark_pending: 'برگرداندن',   /* 🆕 فقط تک کلمه */
     btn_edit: 'ویرایش',
     btn_delete: 'حذف',
     btn_pin: 'پین کردن',
     btn_unpin: 'برداشتن پین',
 
-    /* ───── تأیید ───── */
     confirm_delete_body: 'تسک از لیست مخفی می‌شه.',
 
-    /* ───── تنظیمات ───── */
     settings_title: 'تنظیمات تسک‌های گیت',
 
     settings_language: 'زبان',
@@ -107,7 +99,6 @@ export default {
     settings_sync_after_edit: 'همگام‌سازی بعد از تغییرات',
     settings_sync_after_edit_desc: 'تغییرات فوری به گیت‌هاب فرستاده بشن',
 
-    /* ───── اعلان‌ها ───── */
     notice_task_created: 'تسک ساخته شد',
     notice_task_updated: 'تسک ویرایش شد',
     notice_task_completed: 'تسک انجام شد',
