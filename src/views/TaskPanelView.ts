@@ -1,5 +1,7 @@
 /* ════════════════════════════════════════════════════════════
-   📋 پنل اصلی — با حفظ scroll position هنگام re-render
+   📋 پنل اصلی تسک‌ها (با تب‌ها، آمار، پین)
+   ✅ حفظ scroll position هنگام re-render
+   ✅ آیکون پین فقط برای تسک‌های در انتظار
    ════════════════════════════════════════════════════════════ */
 
 import { ItemView, WorkspaceLeaf, setIcon } from 'obsidian';
@@ -36,7 +38,12 @@ export class TaskPanelView extends ItemView {
         /* همگام‌سازی RTL برای Toast */
         this.plugin.toastManager.setRTL(this.plugin.settings.language === 'fa');
 
-        if (this.plugin.settings.autoSyncOnOpen && this.plugin.settings.token && this.plugin.settings.repo) {
+        /* سینک خودکار هنگام باز شدن */
+        if (
+            this.plugin.settings.autoSyncOnOpen &&
+            this.plugin.settings.token &&
+            this.plugin.settings.repo
+        ) {
             this.syncing = true;
             this.render();
             await this.plugin.taskManager.sync(false);
@@ -50,7 +57,7 @@ export class TaskPanelView extends ItemView {
     refresh(): void { this.render(); }
 
     /* ═══════════════════════════════════════════════════
-       رندر کامل با حفظ scroll position
+       رندر کامل — با حفظ scroll position
        ═══════════════════════════════════════════════════ */
     private render(): void {
         const { contentEl } = this;
@@ -62,7 +69,7 @@ export class TaskPanelView extends ItemView {
         contentEl.addClass('git-tasks-panel');
         applyDirection(contentEl, this.plugin.settings.language);
 
-        /* RTL برای Toast هم بروز بشه */
+        /* همگام‌سازی RTL برای Toast */
         this.plugin.toastManager.setRTL(this.plugin.settings.language === 'fa');
 
         this.renderHeader(contentEl);
@@ -77,7 +84,7 @@ export class TaskPanelView extends ItemView {
             this.renderCompleted(contentEl);
         }
 
-        /* بازگردانی position (بدون پریدن به بالا) */
+        /* بازگردانی position */
         requestAnimationFrame(() => {
             contentEl.scrollTop = savedScroll;
         });
@@ -98,11 +105,13 @@ export class TaskPanelView extends ItemView {
 
         const actions = topRow.createDiv({ cls: 'git-tasks-header-actions' });
 
+        /* دکمه سینک */
         const syncBtn = actions.createEl('button', { cls: 'clickable-icon' });
         setIcon(syncBtn, 'refresh-cw');
         syncBtn.setAttribute('aria-label', t(lang, 'panel_reload'));
         syncBtn.onclick = () => this.handleSync();
 
+        /* دکمه تسک جدید (فقط در تب در انتظار) */
         if (this.currentTab === 'pending') {
             const addBtn = actions.createEl('button', { cls: 'clickable-icon' });
             setIcon(addBtn, 'plus');
@@ -136,10 +145,13 @@ export class TaskPanelView extends ItemView {
         mkTab('completed', 'check-circle', t(lang, 'tab_completed'));
     }
 
-    /* ───── تب تسک‌های در انتظار ───── */
+    /* ═══════════════════════════════════════════════════
+       تب تسک‌های در انتظار
+       ═══════════════════════════════════════════════════ */
     private renderPending(parent: HTMLElement): void {
         const lang = this.plugin.settings.language;
 
+        /* dropdown دسته‌بندی */
         const cats = this.plugin.taskManager.getCategories();
         if (cats.length > 0) {
             const catRow = parent.createDiv({ cls: 'git-tasks-category-row' });
@@ -169,6 +181,7 @@ export class TaskPanelView extends ItemView {
         const visible = tasks.slice(0, this.visibleCount);
         for (const task of visible) this.renderTaskCard(body, task, false);
 
+        /* دکمه نمایش بیشتر */
         if (tasks.length > this.visibleCount) {
             const moreBtn = body.createEl('button', {
                 cls: 'git-tasks-show-more',
@@ -181,11 +194,14 @@ export class TaskPanelView extends ItemView {
         }
     }
 
-    /* ───── تب تسک‌های انجام‌شده ───── */
+    /* ═══════════════════════════════════════════════════
+       تب تسک‌های انجام‌شده (با کارت‌های آماری)
+       ═══════════════════════════════════════════════════ */
     private renderCompleted(parent: HTMLElement): void {
         const lang = this.plugin.settings.language;
         const stats = this.plugin.taskManager.getStats();
 
+        /* کارت‌های آماری */
         const statsGrid = parent.createDiv({ cls: 'git-tasks-stats-grid' });
         const mkCard = (label: string, value: number) => {
             const card = statsGrid.createDiv({ cls: 'git-tasks-stat-card' });
@@ -199,6 +215,7 @@ export class TaskPanelView extends ItemView {
         mkCard(t(lang, 'stats_this_year'), stats.this_year);
         mkCard(t(lang, 'stats_total'), stats.total);
 
+        /* لیست تسک‌های انجام‌شده */
         const body = parent.createDiv({ cls: 'git-tasks-body' });
         const tasks = this.plugin.taskManager.getCompletedTasks();
 
@@ -222,17 +239,24 @@ export class TaskPanelView extends ItemView {
         }
     }
 
+    /* ───── حالت خالی ───── */
     private renderEmpty(parent: HTMLElement, title: string, hint: string): void {
         const empty = parent.createDiv({ cls: 'git-tasks-empty' });
         empty.createEl('p', { text: title, cls: 'git-tasks-empty-title' });
         if (hint) empty.createEl('p', { text: hint, cls: 'git-tasks-empty-hint' });
     }
 
-    /* ───── کارت تسک ───── */
+    /* ═══════════════════════════════════════════════════
+       کارت تسک
+       ═══════════════════════════════════════════════════ */
     private renderTaskCard(parent: HTMLElement, task: Task, isCompleted: boolean): void {
         const lang = this.plugin.settings.language;
-        const card = parent.createDiv({ cls: 'git-tasks-card' + (task.pinned ? ' is-pinned' : '') });
 
+        /* کلاس is-pinned فقط برای تسک‌های در انتظار */
+        const pinnedClass = (task.pinned && !isCompleted) ? ' is-pinned' : '';
+        const card = parent.createDiv({ cls: 'git-tasks-card' + pinnedClass });
+
+        /* ───── چک‌باکس ───── */
         const cbWrap = card.createDiv({ cls: 'git-tasks-card-checkbox' });
         const cb = cbWrap.createEl('input', { type: 'checkbox' });
         cb.checked = isCompleted;
@@ -241,22 +265,24 @@ export class TaskPanelView extends ItemView {
             cb.disabled = true;
 
             if (isCompleted) {
+                /* برگرداندن به در انتظار */
                 const ok = await this.plugin.taskManager.uncompleteTask(task);
                 if (ok) {
                     this.plugin.toastManager.show(t(lang, 'notice_task_updated'), 'success');
                     if (this.plugin.settings.autoSyncAfterEdit) {
-                        await this.plugin.taskManager.sync(false);
+                        this.plugin.taskManager.sync(false).catch(() => {});
                     }
                     this.render();
                 } else {
                     cb.disabled = false;
                 }
             } else {
+                /* علامت‌گذاری به عنوان انجام شده */
                 const ok = await this.plugin.taskManager.completeTask(task);
                 if (ok) {
                     this.plugin.toastManager.show(t(lang, 'notice_task_completed'), 'success');
                     if (this.plugin.settings.autoSyncAfterEdit) {
-                        await this.plugin.taskManager.sync(false);
+                        this.plugin.taskManager.sync(false).catch(() => {});
                     }
                     this.render();
                 } else {
@@ -266,15 +292,20 @@ export class TaskPanelView extends ItemView {
             }
         };
 
+        /* ───── بدنه کارت ───── */
         const bodyCard = card.createDiv({ cls: 'git-tasks-card-body' });
 
         const titleRow = bodyCard.createDiv({ cls: 'git-tasks-card-title-row' });
-        if (task.pinned) {
+
+        /* 🔥 آیکون پین فقط برای تسک‌های در انتظار */
+        if (task.pinned && !isCompleted) {
             const pinIcon = titleRow.createSpan({ cls: 'git-tasks-pin-icon' });
             setIcon(pinIcon, 'pin');
         }
+
         titleRow.createDiv({ cls: 'git-tasks-card-title', text: task.title });
 
+        /* ───── متادیتا (تاریخ + دسته) ───── */
         const meta = bodyCard.createDiv({ cls: 'git-tasks-card-meta' });
 
         /* تاریخ: اگه انجام‌شده، تاریخ اتمام؛ وگرنه تاریخ ساخت */
@@ -292,6 +323,7 @@ export class TaskPanelView extends ItemView {
         setIcon(dateEl.createSpan({ cls: 'git-tasks-icon' }), 'calendar');
         dateEl.createSpan({ text: ' ' + dateStr });
 
+        /* دسته‌بندی */
         if (task.category) {
             const catEl = meta.createSpan({ cls: 'git-tasks-card-cat' });
             setIcon(catEl.createSpan({ cls: 'git-tasks-icon' }), 'tag');
@@ -303,23 +335,30 @@ export class TaskPanelView extends ItemView {
             });
         }
 
+        /* ───── کلیک روی کارت → باز شدن مودال جزئیات ───── */
         bodyCard.onclick = () => {
             new TaskDetailsModal(this.app, this.plugin, task, () => this.render()).open();
         };
     }
 
-    /* ───── اکشن‌ها ───── */
+    /* ═══════════════════════════════════════════════════
+       اکشن‌ها
+       ═══════════════════════════════════════════════════ */
     private async handleSync(): Promise<void> {
         const lang = this.plugin.settings.language;
+
         if (!this.plugin.settings.token || !this.plugin.settings.repo) {
             this.plugin.toastManager.show(t(lang, 'notice_fill_repo'), 'warning');
             return;
         }
+
         this.syncing = true;
         this.render();
+
         const ok = await this.plugin.taskManager.sync(true, (msg, type) =>
             this.plugin.toastManager.show(msg, type)
         );
+
         this.syncing = false;
         if (ok) this.visibleCount = this.plugin.settings.tasksPerPage;
         this.render();
