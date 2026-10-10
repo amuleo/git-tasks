@@ -3,6 +3,7 @@
    ✅ رفع باگ‌های زمانی (DST، end-of-month، Jalali year/month)
    ✅ رفع باگ پین (بازگشت مقدار درست)
    ✅ به‌روزرسانی داینامیک آمار بعد از تغییر تنظیمات
+   ✅ i18n کامل برای پیام‌های همگام‌سازی
    ════════════════════════════════════════════════════════════ */
 
 import type {
@@ -14,6 +15,7 @@ import type {
 } from '../types';
 import { GitManager } from './GitManager';
 import { CacheManager } from './CacheManager';
+import { t } from '../i18n';
 import {
     startOfDay,
     startOfYesterday,
@@ -80,6 +82,7 @@ export class TaskManager {
 
     /* ═══════════════════════════════════════════════════════════
        🔄 همگام‌سازی با گیت‌هاب
+       ✅ پیام‌ها با زبان کاربر (i18n)
        ═══════════════════════════════════════════════════════════ */
     async sync(
         showToast = false,
@@ -108,13 +111,18 @@ export class TaskManager {
             /* ذخیره در کش محلی */
             await this.cache.save(tasks, categories);
 
+            /* 🔥 پیام ترجمه‌شده */
             if (showToast && toast) {
-                toast('Tasks synced', 'success');
+                toast(t(this.lang, 'notice_sync_ok'), 'success');
             }
             return true;
         } catch (e: any) {
+            /* 🔥 پیام خطای ترجمه‌شده */
             if (showToast && toast) {
-                toast(`Sync failed: ${e?.message || 'unknown'}`, 'error');
+                toast(
+                    t(this.lang, 'notice_sync_fail', { error: e?.message || 'unknown' }),
+                    'error'
+                );
             }
             return false;
         }
@@ -122,7 +130,7 @@ export class TaskManager {
 
     /* ═══════════════════════════════════════════════════════════
        📊 محاسبه‌ی آمار (با تمام رفع‌های زمانی)
-       
+
        ✅ DST-safe: از setDate استفاده می‌کنه نه ts - 86400000
        ✅ Jalali-aware: اگه useJalaliDate روشن باشه،
           مرزهای سال و ماه از تقویم شمسی میان
@@ -189,7 +197,7 @@ export class TaskManager {
 
     /* ═══════════════════════════════════════════════════════════
        🆕 به‌روزرسانی آمار بعد از تغییر تنظیمات (مثلاً تاگل شمسی)
-       
+
        وقتی کاربر تاگل تاریخ شمسی رو روشن/خاموش می‌کنه، مرزهای
        سال و ماه عوض می‌شن. این متد فوری آمار رو بازمحاسبه و
        در گیت‌هاب و کش ذخیره می‌کنه.
