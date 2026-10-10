@@ -1,6 +1,7 @@
 /* ════════════════════════════════════════════════════════════
    ➕ مودال ساخت تسک جدید
-   ✅ مودال قبل از sync بسته می‌شه (sync در پس‌زمینه)
+   ✅ دکمه‌ها ستونی، تمام عرض
+   ✅ مودال قبل از sync بسته می‌شه
    ════════════════════════════════════════════════════════════ */
 
 import { App, Modal, Setting } from 'obsidian';
@@ -59,11 +60,14 @@ export class CreateTaskModal extends Modal {
                 dd.onChange(v => { this.category = v || null; });
             });
 
-        const btnRow = contentEl.createDiv({ cls: 'git-tasks-modal-buttons' });
+        /* 🆕 دکمه‌ها به صورت ستونی (تمام عرض) */
+        const btnRow = contentEl.createDiv({ cls: 'git-tasks-modal-buttons-stack' });
 
+        /* ۱. لغو (بالا) */
         const cancel = btnRow.createEl('button', { text: t(lang, 'btn_cancel') });
         cancel.onclick = () => this.close();
 
+        /* ۲. ایجاد (پایین، primary) */
         const save = btnRow.createEl('button', {
             text: t(lang, 'btn_create'),
             cls: 'mod-cta',
@@ -72,8 +76,7 @@ export class CreateTaskModal extends Modal {
     }
 
     /* ═══════════════════════════════════════════════════════
-       ارسال تسک
-       ترتیب: toast → close → sync پس‌زمینه
+       ارسال تسک — بستن فوری، sync پس‌زمینه
        ═══════════════════════════════════════════════════════ */
     private async submit(): Promise<void> {
         if (this.submitting) return;
@@ -93,14 +96,12 @@ export class CreateTaskModal extends Modal {
         );
 
         if (ok) {
-            /* ۱. Toast موفقیت */
+            /* ۱. Toast */
             this.plugin.toastManager.show(t(lang, 'notice_task_created'), 'success');
-
             /* ۲. بستن مودال + رفرش پنل */
             this.onDone();
             this.close();
-
-            /* ۳. sync در پس‌زمینه (بدون انتظار) */
+            /* ۳. sync پس‌زمینه */
             if (this.plugin.settings.autoSyncAfterEdit) {
                 this.plugin.taskManager.sync(false).catch(() => {});
             }
