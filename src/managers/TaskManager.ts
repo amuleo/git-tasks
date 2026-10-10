@@ -1,10 +1,23 @@
 /* ════════════════════════════════════════════════════════════
-   📋 Task Manager — با رفع باگ پین و مرتب‌سازی داینامیک
+   📋 Task Manager — با آمار دقیق بر اساس تقویم کاربر
+   ✅ رفع باگ‌های زمانی
    ════════════════════════════════════════════════════════════ */
 
 import type { Task, Category, GitTasksSettings, Language, CompletedStats } from '../types';
 import { GitManager } from './GitManager';
 import { CacheManager } from './CacheManager';
+import {
+    startOfDay,
+    startOfYesterday,
+    startOfDaysAgo,
+    getJalaliYearStart,
+    getJalaliPrevMonthStart,
+    getGregorianYearStart,
+    getGregorianPrevMonthStart,
+} from '../utils/jalaliDate';
+
+/* حد تحمل برای انحراف ساعت (۵ دقیقه) */
+const CLOCK_DRIFT_TOLERANCE = 5 * 60 * 1000;
 
 export class TaskManager {
     private tasks: Task[] = [];
@@ -58,9 +71,7 @@ export class TaskManager {
             await this.git.saveIndex(this.stats);
             await this.cache.save(tasks, categories);
 
-            if (showToast && toast) {
-                toast('Tasks synced', 'success');
-            }
+            if (showToast && toast) toast('Tasks synced', 'success');
             return true;
         } catch (e: any) {
             if (showToast && toast) {
@@ -70,20 +81,44 @@ export class TaskManager {
         }
     }
 
-    /* ───── محاسبه‌ی آمار ───── */
+    /* ═══════════════════════════════════════════════════
+       📊 محاسبه‌ی آمار (اصلاح‌شده)
+       ✅ مرزهای Jalali اگه useJalaliDate روشن باشه
+       ✅ DST-safe
+       ✅ فیلتر تاریخ‌های آینده (با تحمل ۵ دقیقه)
+       ═══════════════════════════════════════════════════ */
     private recomputeStats(): void {
         const now = Date.now();
-        const todayStart = this.getDayStart(now);
-        const yesterdayStart = todayStart - 86400000;
-        const weekStart = todayStart - 6 * 86400000;
-        const yearStart = this.getYearStart(now);
+        const useJalali = this.s.useJalaliDate;
 
-        const d = new Date(now);
-        d.setMonth(d.getMonth() - 1, 1);
-        d.setHours(0, 0, 0, 0);
-        const lastMonthStart = d.getTime();
+        /* شروع روزها - DST-safe */
+        const todayStart = startOfDay(now);
+        const yesterdayStart = startOfYesterday(now);
+        const weekStart = startOfDaysAgo(now, 6);
 
-        const completed = this.tasks.filter(t => t.completed && !t.deleted && t.completed_ts > 0);
+        /* شروع ماه/سال - بسته به تقویم کاربر */
+        let yearStart: number;
+        let prevMonthStart: number;
+
+        if (useJalali) {
+            yearStart = getJalaliYearStart(now);
+            prevMonthStart = getJalaliPrevMonthStart(now);
+        } else {
+            yearStart = getGregorianYearStart(now);
+            prevMonthStart = getGregorianPrevMonthStart(now);
+        }
+
+        /* فیلتر تسک‌های انجام‌شده‌ی معتبر
+           ✅ حذف‌شده‌ها حذف می‌شن
+           ✅ تاریخ‌های صفر حذف می‌شن
+           ✅ تاریخ‌های آینده (بیشتر از ۵ دقیقه) حذف می‌شن */
+        const upperBound = now + CLOCK_DRIFT_TOLERANCE;
+        const completed = this.tasks.filter(t =>
+            t.completed &&
+            !t.deleted &&
+            t.completed_ts > 0 &&
+            t.completed_ts <= upperBound
+        );
 
         this.stats = {
             today: completed.filter(t => t.completed_ts >= todayStart).length,
@@ -91,23 +126,10 @@ export class TaskManager {
                 t.completed_ts >= yesterdayStart && t.completed_ts < todayStart
             ).length,
             this_week: completed.filter(t => t.completed_ts >= weekStart).length,
-            last_month: completed.filter(t => t.completed_ts >= lastMonthStart).length,
+            last_month: completed.filter(t => t.completed_ts >= prevMonthStart).length,
             this_year: completed.filter(t => t.completed_ts >= yearStart).length,
             total: completed.length,
         };
-    }
-
-    private getDayStart(ts: number): number {
-        const d = new Date(ts);
-        d.setHours(0, 0, 0, 0);
-        return d.getTime();
-    }
-
-    private getYearStart(ts: number): number {
-        const d = new Date(ts);
-        d.setMonth(0, 1);
-        d.setHours(0, 0, 0, 0);
-        return d.getTime();
     }
 
     /* ───── فیلترها ───── */
@@ -137,10 +159,7 @@ export class TaskManager {
         return this.lang === 'fa' && cat.name_fa ? cat.name_fa : cat.name;
     }
 
-    /* ═══════════════════════════════════════════════════
-       عملیات (همه بعد از موفقیت، لیست رو مرتب می‌کنن)
-       ═══════════════════════════════════════════════════ */
-
+    /* ───── عملیات ───── */
     async createTask(title: string, description: string, category: string | null): Promise<boolean> {
         const task = await this.git.createTask(title, description, category);
         if (!task) return false;
@@ -157,7 +176,6 @@ export class TaskManager {
         if (idx >= 0) {
             this.tasks[idx].completed = true;
             this.tasks[idx].completed_ts = Date.now();
-            /* همگام با آبجکت ورودی */
             task.completed = true;
             task.completed_ts = this.tasks[idx].completed_ts;
         }
@@ -189,7 +207,6 @@ export class TaskManager {
         const idx = this.tasks.findIndex(t => t.id === task.id);
         if (idx >= 0) {
             this.tasks[idx] = { ...this.tasks[idx], ...patch };
-            /* همگام با آبجکت ورودی */
             Object.assign(task, patch);
         }
         this.git.sortTasksArray(this.tasks);
@@ -211,13 +228,6 @@ export class TaskManager {
         return true;
     }
 
-    /* ═══════════════════════════════════════════════════
-       🔥 پین / آنپین (اصلاح‌شده)
-       بعد از موفقیت:
-       1. وضعیت تسک آپدیت می‌شه (both in array and ref)
-       2. لیست مرتب می‌شه
-       3. مقدار جدید برگردونده می‌شه
-       ═══════════════════════════════════════════════════ */
     async togglePin(task: Task): Promise<{ ok: boolean; pinned: boolean }> {
         const newVal = !task.pinned;
         const ok = await this.git.updateTask(task, { pinned: newVal });
@@ -226,10 +236,8 @@ export class TaskManager {
         const idx = this.tasks.findIndex(t => t.id === task.id);
         if (idx >= 0) {
             this.tasks[idx].pinned = newVal;
-            /* همگام با آبجکت ورودی */
             task.pinned = newVal;
         }
-        /* مرتب‌سازی داینامیک برای جابجایی پین‌شده به بالا */
         this.git.sortTasksArray(this.tasks);
         await this.cache.save(this.tasks, this.categories);
         return { ok: true, pinned: newVal };
