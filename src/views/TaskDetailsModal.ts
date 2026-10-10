@@ -1,5 +1,5 @@
 /* ════════════════════════════════════════════════════════════
-   🔎 مودال جزئیات تسک (نمایش + ویرایش + انجام + حذف)
+   🔎 مودال جزئیات تسک (با پین / آنپین)
    ════════════════════════════════════════════════════════════ */
 
 import { App, Modal, Notice } from 'obsidian';
@@ -13,7 +13,6 @@ export class TaskDetailsModal extends Modal {
     task: Task;
     onDone: () => void;
 
-    /* حالت ویرایش */
     private editing = false;
     private editTitle = '';
     private editDescription = '';
@@ -26,9 +25,7 @@ export class TaskDetailsModal extends Modal {
         this.onDone = onDone;
     }
 
-    onOpen(): void {
-        this.render();
-    }
+    onOpen(): void { this.render(); }
 
     private render(): void {
         const { contentEl } = this;
@@ -36,20 +33,21 @@ export class TaskDetailsModal extends Modal {
         const lang = this.plugin.settings.language;
         applyDirection(contentEl, lang);
 
-        if (this.editing) {
-            this.renderEditMode(contentEl);
-        } else {
-            this.renderViewMode(contentEl);
-        }
+        if (this.editing) this.renderEditMode(contentEl);
+        else this.renderViewMode(contentEl);
     }
 
     /* ───── حالت نمایش ───── */
     private renderViewMode(parent: HTMLElement): void {
         const lang = this.plugin.settings.language;
 
-        parent.createEl('h3', { text: t(lang, 'details_title') });
+        /* هدر با عنوان و آیکون پین */
+        const header = parent.createDiv({ cls: 'git-tasks-details-header' });
+        header.createEl('h3', { text: t(lang, 'details_title') });
+        if (this.task.pinned) {
+            header.createSpan({ cls: 'git-tasks-pinned-badge', text: '📌 ' + t(lang, 'pinned_badge') });
+        }
 
-        /* عنوان */
         parent.createEl('h4', { text: this.task.title, cls: 'git-tasks-details-title' });
 
         /* متادیتا */
@@ -57,8 +55,16 @@ export class TaskDetailsModal extends Modal {
         meta.createEl('div', {
             text: `${t(lang, 'details_created')}: ${formatDate(this.task, this.plugin.settings.useJalaliDate)}`,
         });
+        if (this.task.completed && this.task.completed_ts) {
+            const d = new Date(this.task.completed_ts);
+            const { getJalaliString, getGregorianString } = require('../utils/jalaliDate');
+            const completedStr = this.plugin.settings.useJalaliDate
+                ? getJalaliString(d)
+                : getGregorianString(d);
+            meta.createEl('div', { text: `${t(lang, 'details_completed')}: ${completedStr}` });
+        }
         meta.createEl('div', {
-            text: `${t(lang, 'details_status')}: ${t(lang, 'task_pending')}`,
+            text: `${t(lang, 'details_status')}: ${this.task.completed ? t(lang, 'task_done') : t(lang, 'task_pending')}`,
         });
         meta.createEl('div', {
             text: `${t(lang, 'details_category')}: ${this.plugin.taskManager.getCategoryName(this.task.category)}`,
@@ -69,16 +75,32 @@ export class TaskDetailsModal extends Modal {
         const descBox = parent.createDiv({ cls: 'git-tasks-details-desc' });
         descBox.setText(this.task.description || t(lang, 'details_no_description'));
 
-        /* دکمه‌ها */
+        /* دکمه‌ها - دو ردیف */
         const actions = parent.createDiv({ cls: 'git-tasks-modal-buttons' });
 
-        const doneBtn = actions.createEl('button', {
-            text: t(lang, 'btn_mark_done'),
-            cls: 'mod-cta',
+        /* ردیف اول: پین */
+        const pinBtn = actions.createEl('button', {
+            text: this.task.pinned ? t(lang, 'btn_unpin') : t(lang, 'btn_pin'),
         });
-        doneBtn.onclick = () => this.handleComplete();
+        pinBtn.onclick = () => this.handleTogglePin();
 
-        const editBtn = actions.createEl('button', { text: t(lang, 'btn_edit') });
+        /* ردیف اصلی */
+        const mainActions = parent.createDiv({ cls: 'git-tasks-modal-buttons git-tasks-main-actions' });
+
+        if (this.task.completed) {
+            const pendingBtn = mainActions.createEl('button', {
+                text: t(lang, 'btn_mark_pending'),
+            });
+            pendingBtn.onclick = () => this.handleUncomplete();
+        } else {
+            const doneBtn = mainActions.createEl('button', {
+                text: t(lang, 'btn_mark_done'),
+                cls: 'mod-cta',
+            });
+            doneBtn.onclick = () => this.handleComplete();
+        }
+
+        const editBtn = mainActions.createEl('button', { text: t(lang, 'btn_edit') });
         editBtn.onclick = () => {
             this.editing = true;
             this.editTitle = this.task.title;
@@ -87,7 +109,7 @@ export class TaskDetailsModal extends Modal {
             this.render();
         };
 
-        const delBtn = actions.createEl('button', {
+        const delBtn = mainActions.createEl('button', {
             text: t(lang, 'btn_delete'),
             cls: 'mod-warning',
         });
@@ -97,28 +119,19 @@ export class TaskDetailsModal extends Modal {
     /* ───── حالت ویرایش ───── */
     private renderEditMode(parent: HTMLElement): void {
         const lang = this.plugin.settings.language;
-
         parent.createEl('h3', { text: t(lang, 'edit_title') });
 
-        /* عنوان */
         parent.createEl('label', { text: t(lang, 'field_title') });
-        const titleInput = parent.createEl('input', {
-            type: 'text',
-            cls: 'git-tasks-input',
-        });
+        const titleInput = parent.createEl('input', { type: 'text', cls: 'git-tasks-input' });
         titleInput.value = this.editTitle;
         titleInput.oninput = () => { this.editTitle = titleInput.value; };
 
-        /* توضیحات */
         parent.createEl('label', { text: t(lang, 'field_description') });
-        const descInput = parent.createEl('textarea', {
-            cls: 'git-tasks-textarea',
-        });
+        const descInput = parent.createEl('textarea', { cls: 'git-tasks-textarea' });
         descInput.rows = 5;
         descInput.value = this.editDescription;
         descInput.oninput = () => { this.editDescription = descInput.value; };
 
-        /* دسته‌بندی */
         parent.createEl('label', { text: t(lang, 'field_category') });
         const select = parent.createEl('select', { cls: 'dropdown' });
         select.createEl('option', { value: '', text: t(lang, 'panel_no_category') });
@@ -129,87 +142,80 @@ export class TaskDetailsModal extends Modal {
         select.value = this.editCategory ?? '';
         select.onchange = () => { this.editCategory = select.value || null; };
 
-        /* دکمه‌ها */
         const actions = parent.createDiv({ cls: 'git-tasks-modal-buttons' });
-
         const cancelBtn = actions.createEl('button', { text: t(lang, 'btn_cancel') });
-        cancelBtn.onclick = () => {
-            this.editing = false;
-            this.render();
-        };
-
-        const saveBtn = actions.createEl('button', {
-            text: t(lang, 'btn_save'),
-            cls: 'mod-cta',
-        });
+        cancelBtn.onclick = () => { this.editing = false; this.render(); };
+        const saveBtn = actions.createEl('button', { text: t(lang, 'btn_save'), cls: 'mod-cta' });
         saveBtn.onclick = () => this.handleSave();
     }
 
-    /* ───── انجام تسک ───── */
+    /* ───── عملیات ───── */
+    private async handleTogglePin(): Promise<void> {
+        const lang = this.plugin.settings.language;
+        const ok = await this.plugin.taskManager.togglePin(this.task);
+        if (ok) {
+            this.task.pinned = !this.task.pinned;
+            new Notice(t(lang, this.task.pinned ? 'notice_task_pinned' : 'notice_task_unpinned'));
+            this.onDone();
+            this.render();
+        }
+    }
+
     private async handleComplete(): Promise<void> {
         const lang = this.plugin.settings.language;
         const ok = await this.plugin.taskManager.completeTask(this.task);
         if (ok) {
             new Notice(t(lang, 'notice_task_completed'));
-            if (this.plugin.settings.autoSyncAfterEdit) {
-                await this.plugin.taskManager.sync(false);
-            }
+            if (this.plugin.settings.autoSyncAfterEdit) await this.plugin.taskManager.sync(false);
             this.onDone();
             this.close();
-        } else {
-            new Notice(t(lang, 'notice_sync_fail', { error: 'update failed' }));
         }
     }
 
-    /* ───── ذخیره ویرایش ───── */
+    private async handleUncomplete(): Promise<void> {
+        const lang = this.plugin.settings.language;
+        const ok = await this.plugin.taskManager.uncompleteTask(this.task);
+        if (ok) {
+            new Notice(t(lang, 'notice_task_updated'));
+            if (this.plugin.settings.autoSyncAfterEdit) await this.plugin.taskManager.sync(false);
+            this.onDone();
+            this.close();
+        }
+    }
+
     private async handleSave(): Promise<void> {
         const lang = this.plugin.settings.language;
-
         if (!this.editTitle.trim()) {
             new Notice(t(lang, 'notice_no_title'));
             return;
         }
-
         const ok = await this.plugin.taskManager.updateTask(this.task, {
             title: this.editTitle.trim(),
             description: this.editDescription.trim(),
             category: this.editCategory,
         });
-
         if (ok) {
             new Notice(t(lang, 'notice_task_updated'));
             this.task.title = this.editTitle.trim();
             this.task.description = this.editDescription.trim();
             this.task.category = this.editCategory;
             this.editing = false;
-            if (this.plugin.settings.autoSyncAfterEdit) {
-                await this.plugin.taskManager.sync(false);
-            }
+            if (this.plugin.settings.autoSyncAfterEdit) await this.plugin.taskManager.sync(false);
             this.onDone();
             this.render();
-        } else {
-            new Notice(t(lang, 'notice_sync_fail', { error: 'update failed' }));
         }
     }
 
-    /* ───── حذف نرم ───── */
     private async handleDelete(): Promise<void> {
         const lang = this.plugin.settings.language;
-        /* تأیید ساده با confirm مرورگر (سبک و ساده) */
-        const ok = window.confirm(t(lang, 'confirm_delete_body'));
-        if (!ok) return;
-
-        const success = await this.plugin.taskManager.softDelete(this.task);
-        if (success) {
+        if (!window.confirm(t(lang, 'confirm_delete_body'))) return;
+        const ok = await this.plugin.taskManager.softDelete(this.task);
+        if (ok) {
             new Notice(t(lang, 'notice_task_deleted'));
             this.onDone();
             this.close();
-        } else {
-            new Notice(t(lang, 'notice_sync_fail', { error: 'delete failed' }));
         }
     }
 
-    onClose(): void {
-        this.contentEl.empty();
-    }
+    onClose(): void { this.contentEl.empty(); }
 }
