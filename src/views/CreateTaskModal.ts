@@ -1,7 +1,7 @@
 /* ════════════════════════════════════════════════════════════
    ➕ مودال ساخت تسک جدید
-   ✅ دکمه‌ها ستونی، تمام عرض
-   ✅ مودال قبل از sync بسته می‌شه
+   ✅ i18n کامل پیام خطا
+   ✅ RTL تمیز (بدون overrides مودال)
    ════════════════════════════════════════════════════════════ */
 
 import { App, Modal, Setting } from 'obsidian';
@@ -25,6 +25,9 @@ export class CreateTaskModal extends Modal {
     onOpen(): void {
         const { contentEl } = this;
         contentEl.empty();
+        /* 🆕 کلاس اختصاصی برای استایل مودال */
+        contentEl.addClass('git-tasks-modal-content');
+
         const lang = this.plugin.settings.language;
         applyDirection(contentEl, lang);
 
@@ -60,14 +63,12 @@ export class CreateTaskModal extends Modal {
                 dd.onChange(v => { this.category = v || null; });
             });
 
-        /* 🆕 دکمه‌ها به صورت ستونی (تمام عرض) */
+        /* دکمه‌ها - ستونی */
         const btnRow = contentEl.createDiv({ cls: 'git-tasks-modal-buttons-stack' });
 
-        /* ۱. لغو (بالا) */
         const cancel = btnRow.createEl('button', { text: t(lang, 'btn_cancel') });
         cancel.onclick = () => this.close();
 
-        /* ۲. ایجاد (پایین، primary) */
         const save = btnRow.createEl('button', {
             text: t(lang, 'btn_create'),
             cls: 'mod-cta',
@@ -75,9 +76,6 @@ export class CreateTaskModal extends Modal {
         save.onclick = () => this.submit();
     }
 
-    /* ═══════════════════════════════════════════════════════
-       ارسال تسک — بستن فوری، sync پس‌زمینه
-       ═══════════════════════════════════════════════════════ */
     private async submit(): Promise<void> {
         if (this.submitting) return;
         const lang = this.plugin.settings.language;
@@ -96,21 +94,16 @@ export class CreateTaskModal extends Modal {
         );
 
         if (ok) {
-            /* ۱. Toast */
             this.plugin.toastManager.show(t(lang, 'notice_task_created'), 'success');
-            /* ۲. بستن مودال + رفرش پنل */
             this.onDone();
             this.close();
-            /* ۳. sync پس‌زمینه */
             if (this.plugin.settings.autoSyncAfterEdit) {
                 this.plugin.taskManager.sync(false).catch(() => {});
             }
         } else {
             this.submitting = false;
-            this.plugin.toastManager.show(
-                t(lang, 'notice_sync_fail', { error: 'create failed' }),
-                'error'
-            );
+            /* 🔥 پیام ترجمه‌شده */
+            this.plugin.toastManager.show(t(lang, 'notice_create_failed'), 'error');
         }
     }
 
