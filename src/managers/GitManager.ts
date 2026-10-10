@@ -1,13 +1,28 @@
 /* ════════════════════════════════════════════════════════════
-   🐙 مدیریت عملیات گیت‌هاب (تسک‌ها + دسته‌بندی‌ها)
+   🐙 مدیریت عملیات گیت‌هاب
    ════════════════════════════════════════════════════════════ */
 
-import type { GitTasksSettings, Task, Category, CategoryFile } from '../types';
+import type { GitTasksSettings, Task, Category, CategoryFile, IndexFile, CompletedStats } from '../types';
 import { getFile, putFile, getTree } from '../utils/github';
 import { getJalaliString, getGregorianString } from '../utils/jalaliDate';
 
 const CATEGORIES_PATH = '_categories.json';
+const INDEX_PATH = '_index.json';
 const TASKS_DIR = 'tasks';
+
+/* دسته‌بندی‌های پیش‌فرض برای بار اول */
+const DEFAULT_CATEGORIES: CategoryFile = {
+    version: 1,
+    categories: [
+        { id: 'work',     name: 'Work',     name_fa: 'کاری' },
+        { id: 'study',    name: 'Study',    name_fa: 'درسی' },
+        { id: 'daily',    name: 'Daily',    name_fa: 'روزمره' },
+        { id: 'personal', name: 'Personal', name_fa: 'شخصی' },
+        { id: 'shopping', name: 'Shopping', name_fa: 'خرید' },
+        { id: 'finance',  name: 'Finance',  name_fa: 'مالی' },
+        { id: 'health',   name: 'Health',   name_fa: 'سلامتی' },
+    ],
+};
 
 export class GitManager {
     constructor(private getSettings: () => GitTasksSettings) {}
@@ -16,35 +31,107 @@ export class GitManager {
         return this.getSettings();
     }
 
-    /* ───── خواندن فایل دسته‌بندی‌ها ───── */
+    /* ═══════════════════════════════════════════════════
+       🆕 اطمینان از وجود فایل‌های ضروری در مخزن
+       اگه _categories.json یا _index.json نباشن، می‌سازیم
+       ═══════════════════════════════════════════════════ */
+    async ensureRepoFiles(): Promise<{ created: string[] }> {
+        const created: string[] = [];
+
+        /* ───── _categories.json ───── */
+        const catFile = await getFile(
+            this.s.token, this.s.username, this.s.repo,
+            CATEGORIES_PATH, this.s.branch
+        );
+        if (!catFile) {
+            const ok = await putFile(
+                this.s.token, this.s.username, this.s.repo,
+                CATEGORIES_PATH,
+                JSON.stringify(DEFAULT_CATEGORIES, null, 2),
+                'init: create _categories.json',
+                this.s.branch
+            );
+            if (ok) created.push(CATEGORIES_PATH);
+        }
+
+        /* ───── _index.json ───── */
+        const idxFile = await getFile(
+            this.s.token, this.s.username, this.s.repo,
+            INDEX_PATH, this.s.branch
+        );
+        if (!idxFile) {
+            const emptyStats: CompletedStats = {
+                today: 0, yesterday: 0, this_week: 0,
+                last_month: 0, this_year: 0, total: 0,
+            };
+            const defaultIndex: IndexFile = {
+                version: 1,
+                last_updated: Date.now(),
+                stats: emptyStats,
+            };
+            const ok = await putFile(
+                this.s.token, this.s.username, this.s.repo,
+                INDEX_PATH,
+                JSON.stringify(defaultIndex, null, 2),
+                'init: create _index.json',
+                this.s.branch
+            );
+            if (ok) created.push(INDEX_PATH);
+        }
+
+        return { created };
+    }
+
+    /* ───── خواندن دسته‌بندی‌ها ───── */
     async loadCategories(): Promise<Category[]> {
         const file = await getFile(
-            this.s.token,
-            this.s.username,
-            this.s.repo,
-            CATEGORIES_PATH,
-            this.s.branch
+            this.s.token, this.s.username, this.s.repo,
+            CATEGORIES_PATH, this.s.branch
         );
-        if (!file) return [];
+        if (!file) return DEFAULT_CATEGORIES.categories;
         try {
             const parsed: CategoryFile = JSON.parse(file.content);
             return parsed.categories || [];
-        } catch {
-            return [];
-        }
+        } catch { return []; }
+    }
+
+    /* ───── خواندن فایل index ───── */
+    async loadIndex(): Promise<IndexFile | null> {
+        const file = await getFile(
+            this.s.token, this.s.username, this.s.repo,
+            INDEX_PATH, this.s.branch
+        );
+        if (!file) return null;
+        try { return JSON.parse(file.content); } catch { return null; }
+    }
+
+    /* 🆕 ذخیره‌ی آمار در index.json */
+    async saveIndex(stats: CompletedStats): Promise<boolean> {
+        const current = await getFile(
+            this.s.token, this.s.username, this.s.repo,
+            INDEX_PATH, this.s.branch
+        );
+        const idx: IndexFile = {
+            version: 1,
+            last_updated: Date.now(),
+            stats,
+        };
+        return putFile(
+            this.s.token, this.s.username, this.s.repo,
+            INDEX_PATH,
+            JSON.stringify(idx, null, 2),
+            `update stats: total=${stats.total}`,
+            this.s.branch,
+            current?.sha
+        );
     }
 
     /* ───── خواندن لیست تسک‌ها ───── */
     async loadTasks(): Promise<Task[]> {
-        /* گرفتن کل درخت مخزن */
         const tree = await getTree(
-            this.s.token,
-            this.s.username,
-            this.s.repo,
-            this.s.branch
+            this.s.token, this.s.username, this.s.repo, this.s.branch
         );
 
-        /* فیلتر فولدرهای تسک: tasks/xxx */
         const taskFolders = tree
             .filter((t: any) => t.type === 'tree' && t.path.startsWith(`${TASKS_DIR}/`))
             .filter((t: any) => {
@@ -53,30 +140,27 @@ export class GitManager {
             });
 
         const tasks: Task[] = [];
-
-        /* خوندن README هر تسک به صورت موازی (محدود به ۱۰ درخواست همزمان) */
         const chunks = this.chunk(taskFolders, 10);
         for (const chunk of chunks) {
             const results = await Promise.all(chunk.map((f: any) => this.readTask(f.path)));
-            for (const t of results) {
-                if (t) tasks.push(t);
-            }
+            for (const t of results) if (t) tasks.push(t);
         }
 
-        /* مرتب‌سازی بر اساس تاریخ ایجاد (جدیدترین اول) */
-        tasks.sort((a, b) => b.created_ts - a.created_ts);
+        tasks.sort((a, b) => {
+            /* پین‌شده‌ها اول، بعد جدیدترین */
+            if (a.pinned && !b.pinned) return -1;
+            if (!a.pinned && b.pinned) return 1;
+            return b.created_ts - a.created_ts;
+        });
         return tasks;
     }
 
-    /* ───── خواندن یه تسک از README ───── */
+    /* ───── خواندن یه تسک ───── */
     private async readTask(folderPath: string): Promise<Task | null> {
         const readmePath = `${folderPath}/README.md`;
         const file = await getFile(
-            this.s.token,
-            this.s.username,
-            this.s.repo,
-            readmePath,
-            this.s.branch
+            this.s.token, this.s.username, this.s.repo,
+            readmePath, this.s.branch
         );
         if (!file) return null;
 
@@ -90,20 +174,18 @@ export class GitManager {
             category: meta.category || null,
             completed: meta.completed === 'true' || meta.completed === true,
             deleted: meta.deleted === 'true' || meta.deleted === true,
+            pinned: meta.pinned === 'true' || meta.pinned === true,
             created_jalali: meta.created_jalali || '',
             created_gregorian: meta.created_gregorian || '',
             created_ts: parseInt(meta.created_ts) || 0,
             updated_ts: parseInt(meta.updated_ts) || 0,
+            completed_ts: parseInt(meta.completed_ts) || 0,
             sha: file.sha,
         };
     }
 
-    /* ───── ساخت تسک جدید در گیت‌هاب ───── */
-    async createTask(
-        title: string,
-        description: string,
-        category: string | null
-    ): Promise<Task | null> {
+    /* ───── ساخت تسک جدید ───── */
+    async createTask(title: string, description: string, category: string | null): Promise<Task | null> {
         const now = new Date();
         const id = `${TASKS_DIR}/task-${Date.now()}`;
         const readmePath = `${id}/README.md`;
@@ -111,35 +193,26 @@ export class GitManager {
 
         const task: Task = {
             id: id.split('/').pop()!,
-            title,
-            description,
-            category,
-            completed: false,
-            deleted: false,
+            title, description, category,
+            completed: false, deleted: false, pinned: false,
             created_jalali: getJalaliString(now),
             created_gregorian: getGregorianString(now),
             created_ts: now.getTime(),
             updated_ts: now.getTime(),
+            completed_ts: 0,
         };
 
-        const readmeContent = this.buildReadme(task);
-        const titleContent = `# ${title}\n`;
-
-        /* ساخت README */
         const ok1 = await putFile(
             this.s.token, this.s.username, this.s.repo,
-            readmePath, readmeContent,
-            `create task: ${title}`,
-            this.s.branch
+            readmePath, this.buildReadme(task),
+            `create task: ${title}`, this.s.branch
         );
         if (!ok1) return null;
 
-        /* ساخت فایل عنوان */
         await putFile(
             this.s.token, this.s.username, this.s.repo,
-            titlePath, titleContent,
-            `create title: ${title}`,
-            this.s.branch
+            titlePath, `# ${title}\n`,
+            `create title: ${title}`, this.s.branch
         );
 
         return task;
@@ -148,25 +221,31 @@ export class GitManager {
     /* ───── ویرایش تسک ───── */
     async updateTask(task: Task, patch: Partial<Task>): Promise<boolean> {
         const merged: Task = { ...task, ...patch, updated_ts: Date.now() };
-        const readmePath = `${TASKS_DIR}/${task.id}/README.md`;
 
-        /* برای ویرایش، اول باید SHA جدید بگیریم */
+        /* اگه داره انجام‌شده می‌شه، completed_ts رو ست کن */
+        if (patch.completed === true && !task.completed) {
+            merged.completed_ts = Date.now();
+        }
+        /* اگه از انجام‌شده درمیاد، صفرش کن */
+        if (patch.completed === false && task.completed) {
+            merged.completed_ts = 0;
+        }
+
+        const readmePath = `${TASKS_DIR}/${task.id}/README.md`;
         const current = await getFile(
             this.s.token, this.s.username, this.s.repo,
             readmePath, this.s.branch
         );
         if (!current) return false;
 
-        const content = this.buildReadme(merged);
         const ok = await putFile(
             this.s.token, this.s.username, this.s.repo,
-            readmePath, content,
+            readmePath, this.buildReadme(merged),
             `update task: ${merged.title}`,
-            this.s.branch,
-            current.sha
+            this.s.branch, current.sha
         );
 
-        /* آپدیت فایل عنوان در صورت تغییر */
+        /* آپدیت فایل عنوان اگه تغییر کرده */
         if (ok && patch.title && patch.title !== task.title) {
             const titlePath = `${TASKS_DIR}/${task.id}/title.md`;
             const curTitle = await getFile(
@@ -177,45 +256,41 @@ export class GitManager {
                 this.s.token, this.s.username, this.s.repo,
                 titlePath, `# ${patch.title}\n`,
                 `update title: ${patch.title}`,
-                this.s.branch,
-                curTitle?.sha
+                this.s.branch, curTitle?.sha
             );
         }
-
         return ok;
     }
 
-    /* ───── ساخت متن README با Frontmatter ───── */
+    /* ───── ساخت README ───── */
     private buildReadme(t: Task): string {
-        const fm = [
+        return [
             '---',
             `title: "${this.escapeYaml(t.title)}"`,
             `category: ${t.category ? `"${t.category}"` : 'null'}`,
             `completed: ${t.completed}`,
             `deleted: ${t.deleted}`,
+            `pinned: ${t.pinned}`,
             `created_jalali: "${t.created_jalali}"`,
             `created_gregorian: "${t.created_gregorian}"`,
             `created_ts: ${t.created_ts}`,
             `updated_ts: ${t.updated_ts}`,
+            `completed_ts: ${t.completed_ts}`,
             '---',
             '',
             t.description || '',
         ].join('\n');
-        return fm;
     }
 
-    /* ───── پارس کردن Frontmatter ساده (بدون پکیج) ───── */
     private parseFrontmatter(content: string): Record<string, any> {
         const out: Record<string, any> = {};
         const match = content.match(/^---\n([\s\S]*?)\n---/);
         if (!match) return out;
-        const lines = match[1].split('\n');
-        for (const line of lines) {
+        for (const line of match[1].split('\n')) {
             const idx = line.indexOf(':');
             if (idx === -1) continue;
             const key = line.slice(0, idx).trim();
             let val: any = line.slice(idx + 1).trim();
-            /* حذف کوتیشن‌ها */
             if (typeof val === 'string' && val.startsWith('"') && val.endsWith('"')) {
                 val = val.slice(1, -1);
             }
@@ -224,17 +299,13 @@ export class GitManager {
         return out;
     }
 
-    /* ───── فرار دادن کاراکترهای خاص در YAML ───── */
     private escapeYaml(s: string): string {
         return s.replace(/"/g, '\\"');
     }
 
-    /* ───── تبدیل آرایه به تکه‌های کوچک ───── */
     private chunk<T>(arr: T[], size: number): T[][] {
         const out: T[][] = [];
-        for (let i = 0; i < arr.length; i += size) {
-            out.push(arr.slice(i, i + size));
-        }
+        for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size));
         return out;
     }
 }
