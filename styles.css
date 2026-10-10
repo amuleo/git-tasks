@@ -1,11 +1,10 @@
 /* ════════════════════════════════════════════════════════════
-   🎨 استایل‌های Git Tasks — استفاده حداکثری از استایل آبسیدین
-   فقط جاهایی که لازمه استایل اختصاصی زده شده
+   🎨 استایل‌های Git Tasks — طراحی تازه، جداکننده‌های صاف، RTL بهتر
    ════════════════════════════════════════════════════════════ */
 
 /* ───── کانتینر پنل ───── */
 .git-tasks-panel {
-    padding: 8px 10px;
+    padding: 10px 12px;
     display: flex;
     flex-direction: column;
     height: 100%;
@@ -14,12 +13,8 @@
 
 /* ───── هدر ───── */
 .git-tasks-header {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    margin-bottom: 12px;
-    padding-bottom: 8px;
-    border-bottom: 1px solid var(--background-modifier-border);
+    margin-bottom: 10px;
+    border-radius: 0 !important;
 }
 
 .git-tasks-header-top {
@@ -32,19 +27,108 @@
 .git-tasks-title {
     margin: 0;
     font-size: var(--font-ui-medium);
-    font-weight: 600;
+    font-weight: 700;
     color: var(--text-normal);
+    letter-spacing: -0.2px;
 }
 
 .git-tasks-header-actions {
     display: flex;
+    gap: 2px;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   تب‌ها
+   ═══════════════════════════════════════════════════════════ */
+.git-tasks-tabs {
+    display: flex;
     gap: 4px;
+    margin-bottom: 12px;
+    padding: 3px;
+    background: var(--background-secondary);
+    border-radius: 8px;
+}
+
+.git-tasks-tab {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 7px 10px;
+    background: transparent;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: var(--font-ui-smaller);
+    font-weight: 500;
+    color: var(--text-muted);
+    transition: all 0.15s ease;
+    box-shadow: none;
+}
+
+.git-tasks-tab:hover {
+    color: var(--text-normal);
+}
+
+.git-tasks-tab.is-active {
+    background: var(--background-primary);
+    color: var(--text-accent);
+    font-weight: 600;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+
+.git-tasks-tab-icon svg {
+    width: 14px;
+    height: 14px;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   کارت‌های آماری (تب انجام شده)
+   ═══════════════════════════════════════════════════════════ */
+.git-tasks-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+    margin-bottom: 14px;
+}
+
+.git-tasks-stat-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 6px;
+    background: var(--background-secondary);
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 8px;
+    transition: border-color 0.15s ease;
+}
+
+.git-tasks-stat-card:hover {
+    border-color: var(--interactive-accent);
+}
+
+.git-tasks-stat-value {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text-accent);
+    line-height: 1.1;
+    font-variant-numeric: tabular-nums;
+}
+
+.git-tasks-stat-label {
+    font-size: 10.5px;
+    color: var(--text-muted);
+    margin-top: 4px;
+    text-align: center;
 }
 
 /* ───── dropdown دسته‌بندی ───── */
 .git-tasks-category-row {
     display: flex;
     gap: 6px;
+    margin-bottom: 10px;
 }
 
 .git-tasks-category-select {
@@ -60,12 +144,14 @@
     flex: 1;
 }
 
-/* ───── کارت تسک ───── */
+/* ═══════════════════════════════════════════════════════════
+   کارت تسک
+   ═══════════════════════════════════════════════════════════ */
 .git-tasks-card {
     display: flex;
     align-items: flex-start;
-    gap: 8px;
-    padding: 10px 12px;
+    gap: 10px;
+    padding: 11px 13px;
     border: 1px solid var(--background-modifier-border);
     border-radius: 8px;
     background: var(--background-secondary);
@@ -75,6 +161,11 @@
 
 .git-tasks-card:hover {
     border-color: var(--interactive-accent);
+    background: var(--background-secondary-alt);
+}
+
+.git-tasks-card.is-pinned {
+    border-inline-start: 3px solid var(--interactive-accent);
     background: var(--background-secondary-alt);
 }
 
@@ -94,12 +185,31 @@
     min-width: 0;
 }
 
+.git-tasks-card-title-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 4px;
+}
+
+.git-tasks-pin-icon {
+    display: inline-flex;
+    align-items: center;
+    color: var(--text-accent);
+    flex-shrink: 0;
+}
+
+.git-tasks-pin-icon svg {
+    width: 13px;
+    height: 13px;
+}
+
 .git-tasks-card-title {
     font-size: var(--font-ui-small);
     font-weight: 500;
     color: var(--text-normal);
     word-wrap: break-word;
-    margin-bottom: 4px;
+    line-height: 1.4;
 }
 
 .git-tasks-card-meta {
@@ -145,7 +255,7 @@
     opacity: 0.8;
 }
 
-/* ───── حالت لودینگ ───── */
+/* ───── لودینگ ───── */
 .git-tasks-loading {
     text-align: center;
     padding: 30px;
@@ -155,7 +265,7 @@
 
 /* ───── دکمه نمایش بیشتر ───── */
 .git-tasks-show-more {
-    padding: 8px;
+    padding: 9px;
     margin-top: 4px;
     background: transparent;
     border: 1px dashed var(--background-modifier-border);
@@ -172,7 +282,9 @@
     border-style: solid;
 }
 
-/* ───── مودال‌ها ───── */
+/* ═══════════════════════════════════════════════════════════
+   مودال‌ها
+   ═══════════════════════════════════════════════════════════ */
 .git-tasks-modal-buttons {
     display: flex;
     justify-content: flex-end;
@@ -180,18 +292,45 @@
     margin-top: 16px;
     padding-top: 12px;
     border-top: 1px solid var(--background-modifier-border);
+    border-radius: 0 !important;
+}
+
+.git-tasks-main-actions {
+    margin-top: 8px;
+    padding-top: 8px;
+}
+
+.git-tasks-details-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.git-tasks-details-header h3 {
+    margin: 0;
+}
+
+.git-tasks-pinned-badge {
+    font-size: var(--font-ui-smaller);
+    color: var(--text-accent);
+    background: var(--background-secondary);
+    padding: 3px 8px;
+    border-radius: 12px;
+    font-weight: 500;
 }
 
 .git-tasks-input,
 .git-tasks-textarea {
     width: 100%;
     margin-bottom: 12px;
-    padding: 6px 8px;
+    padding: 7px 10px;
     border-radius: 6px;
     border: 1px solid var(--background-modifier-border);
     background: var(--background-primary);
     color: var(--text-normal);
     font-family: inherit;
+    font-size: var(--font-ui-small);
 }
 
 .git-tasks-input:focus,
@@ -203,22 +342,23 @@
 .git-tasks-details-title {
     margin: 8px 0 12px 0;
     font-size: var(--font-ui-large);
+    line-height: 1.4;
 }
 
 .git-tasks-details-meta {
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 5px;
     font-size: var(--font-ui-smaller);
     color: var(--text-muted);
     margin-bottom: 16px;
-    padding: 10px;
+    padding: 10px 12px;
     background: var(--background-secondary);
     border-radius: 6px;
 }
 
 .git-tasks-details-desc {
-    padding: 10px;
+    padding: 10px 12px;
     background: var(--background-secondary);
     border-radius: 6px;
     font-size: var(--font-ui-small);
@@ -227,72 +367,91 @@
     margin-bottom: 16px;
 }
 
-/* ════════════════════════════════════════════════════════════
-   ⚙️ استایل اختصاصی تنظیمات (چون آبسیدین از RTL پشتیبانی کامل نداره)
-   ════════════════════════════════════════════════════════════ */
+/* ═══════════════════════════════════════════════════════════
+   ⚙️ رفع باگ RTL تنظیمات
+   ═══════════════════════════════════════════════════════════ */
 
-/* ───── RTL: چک‌باکس‌ها برعکس ───── */
-.git-tasks-rtl .checkbox-container {
-    direction: rtl;
+/* ───── جداکننده‌های صاف (بدون گردی) ───── */
+.git-tasks-settings .setting-item {
+    border-radius: 0 !important;
 }
 
-/* چک‌باکس‌ها در حالت RTL به سمت راست می‌رن */
-.git-tasks-rtl input[type="checkbox"] {
-    margin-inline-end: 0;
-    margin-inline-start: 5px;
+.git-tasks-settings .setting-item:not(:first-child) {
+    border-top: 1px solid var(--background-modifier-border) !important;
+    border-radius: 0 !important;
 }
 
-/* ───── RTL: توگل‌ها برعکس ───── */
-/* توگل آبسیدین به صورت پیش‌فرض thumb رو با translateX جابجا می‌کنه */
-.git-tasks-rtl .checkbox-container::after {
-    transform: translateX(16px);
+.git-tasks-settings .setting-item:first-child {
+    border-top: none !important;
 }
 
-.git-tasks-rtl .checkbox-container.is-enabled::after {
-    transform: translateX(0);
+/* جداکننده‌ی heading هم صاف */
+.git-tasks-settings .setting-item-heading {
+    border-radius: 0 !important;
+    border-bottom: 1px solid var(--background-modifier-border) !important;
+    padding-bottom: 6px;
 }
 
-/* ───── RTL: منوهای dropdown ───── */
-.git-tasks-rtl .dropdown {
-    direction: rtl;
-    text-align: right;
-}
-
-/* ───── RTL: بچهای تنظیمات ───── */
+/* ───── RTL: تنظیمات ───── */
 .git-tasks-rtl .setting-item {
     direction: rtl;
-    text-align: right;
 }
 
 .git-tasks-rtl .setting-item-info {
     text-align: right;
 }
 
+/* ───── RTL: توگل‌ها (رفع باگ) ───── */
+/* مشکل: توگل Obsidian در RTL به سمت اشتباه می‌ره. راه‌حل: direction:ltr فقط روی خود توگل */
+.git-tasks-rtl .checkbox-container {
+    direction: ltr !important;
+}
+
+.git-tasks-rtl .checkbox-container::after {
+    /* پیش‌فرض: مقدار translateX مثبت برای روشن */
+}
+
+/* ───── RTL: چک‌باکس‌ها ───── */
+.git-tasks-rtl input[type="checkbox"] {
+    margin-inline-end: 0;
+    margin-inline-start: 5px;
+}
+
+/* ───── RTL: dropdown ───── */
+.git-tasks-rtl .dropdown {
+    direction: rtl;
+    text-align: right;
+}
+
 /* ───── RTL: ورودی‌های متنی ───── */
-.git-tasks-rtl input[type="text"],
-.git-tasks-rtl input[type="number"],
-.git-tasks-rtl input[type="password"],
+.git-tasks-rtl input[type="text"]:not([dir="ltr"]),
+.git-tasks-rtl input[type="number"]:not([dir="ltr"]),
 .git-tasks-rtl textarea {
     direction: rtl;
     text-align: right;
 }
 
-/* ───── RTL: دکمه‌های توی مودال ───── */
+/* ورودی‌های اجباری LTR (توکن، repo، branch) همیشه چپ‌چین */
+.git-tasks-settings input[dir="ltr"] {
+    direction: ltr !important;
+    text-align: left !important;
+}
+
+/* ───── RTL: دکمه‌های مودال ───── */
 .git-tasks-rtl .git-tasks-modal-buttons {
     flex-direction: row-reverse;
 }
 
-/* ════════════════════════════════════════════════════════════
-   📱 بهینه‌سازی موبایل
-   ════════════════════════════════════════════════════════════ */
-
+/* ═══════════════════════════════════════════════════════════
+   📱 موبایل
+   ═══════════════════════════════════════════════════════════ */
 @media (max-width: 600px) {
     .git-tasks-panel {
-        padding: 6px 8px;
+        padding: 8px 10px;
     }
 
     .git-tasks-card {
-        padding: 9px 10px;
+        padding: 10px 11px;
     }
 
     .git-tasks-title {
@@ -305,5 +464,18 @@
 
     .git-tasks-card-meta {
         font-size: 11px;
+    }
+
+    .git-tasks-stat-value {
+        font-size: 18px;
+    }
+
+    .git-tasks-stat-label {
+        font-size: 10px;
+    }
+
+    .git-tasks-tab {
+        font-size: 11.5px;
+        padding: 6px 8px;
     }
 }
