@@ -1,7 +1,6 @@
 /* ════════════════════════════════════════════════════════════
    🚀 نقطه ورود پلاگین
    ✅ رفع خطای view.refresh
-   ✅ بهینه‌سازی refreshPanel
    ════════════════════════════════════════════════════════════ */
 
 import { Plugin, WorkspaceLeaf } from 'obsidian';
@@ -112,7 +111,6 @@ export default class GitTasksPlugin extends Plugin {
         const leaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_GIT_TASKS);
         for (const leaf of leaves) {
             const view = leaf.view;
-            /* 🔥 چک کن که view معتبر هست و متد refresh داره */
             if (
                 view &&
                 typeof (view as any).refresh === 'function' &&
@@ -121,7 +119,6 @@ export default class GitTasksPlugin extends Plugin {
                 try {
                     (view as TaskPanelView).refresh();
                 } catch (e) {
-                    /* بی‌صدا نادیده بگیر */
                     console.warn('[Git Tasks] Panel refresh failed:', e);
                 }
             }
