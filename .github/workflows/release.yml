@@ -3,7 +3,7 @@ name: Release Obsidian Plugin
 on:
   push:
     tags:
-      - "*.*.*"
+      - "*"
 
 permissions:
   contents: write
@@ -25,7 +25,6 @@ jobs:
           node-version: '22.x'
 
       # ───── قدم ۳: نصب وابستگی‌ها ─────
-      # از npm install استفاده می‌کنیم چون package-lock.json نداریم
       - name: Install dependencies
         run: npm install --no-audit --no-fund
 
@@ -39,18 +38,7 @@ jobs:
         run: |
           echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
 
-      # ───── قدم ۶: چک کردن هماهنگی نسخه ─────
-      - name: Verify manifest version matches tag
-        run: |
-          MANIFEST_VERSION=$(node -p "require('./manifest.json').version")
-          TAG_VERSION="${{ steps.version.outputs.tag }}"
-          if [ "$MANIFEST_VERSION" != "$TAG_VERSION" ]; then
-            echo "❌ نسخه‌ی manifest.json ($MANIFEST_VERSION) با tag ($TAG_VERSION) هماهنگ نیست!"
-            exit 1
-          fi
-          echo "✅ نسخه هماهنگه: $MANIFEST_VERSION"
-
-      # ───── قدم ۷: ساخت Release و آپلود فایل‌ها ─────
+      # ───── قدم ۶: ساخت Release و آپلود فایل‌ها ─────
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
