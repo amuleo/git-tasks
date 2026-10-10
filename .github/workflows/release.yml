@@ -5,40 +5,98 @@ on:
     tags:
       - "*"
 
+# ───── دسترسی‌های لازم ─────
 permissions:
   contents: write
-  id-token: write
 
 jobs:
   release:
     runs-on: ubuntu-latest
+    timeout-minutes: 10   # جلوگیری از معلق موندن job
 
     steps:
-      # ───── قدم ۱: چک‌اوت کردن مخزن ─────
+      # ═══════════════════════════════════════════════════════
+      # ۱. چک‌اوت (shallow برای سرعت)
+      # ═══════════════════════════════════════════════════════
       - name: Checkout repository
         uses: actions/checkout@v5
+        with:
+          fetch-depth: 1
 
-      # ───── قدم ۲: نصب Node.js ─────
+      # ═══════════════════════════════════════════════════════
+      # ۲. نصب Node.js + کش npm (سرعت بیشتر)
+      # ═══════════════════════════════════════════════════════
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '22.x'
+          cache: 'npm'
+          cache-dependency-path: 'package.json'
 
-      # ───── قدم ۳: نصب وابستگی‌ها ─────
+      # ═══════════════════════════════════════════════════════
+      # ۳. نصب وابستگی‌ها (با --prefer-offline برای سرعت)
+      # ═══════════════════════════════════════════════════════
       - name: Install dependencies
-        run: npm install --no-audit --no-fund
+        run: npm install --no-audit --no-fund --prefer-offline --loglevel=error
 
-      # ───── قدم ۴: بیلد کردن پلاگین ─────
+      # ═══════════════════════════════════════════════════════
+      # ۴. بیلد پلاگین
+      # ═══════════════════════════════════════════════════════
       - name: Build plugin
         run: npm run build
 
-      # ───── قدم ۵: استخراج نسخه از نام tag ─────
+      # ═══════════════════════════════════════════════════════
+      # ۵. استخراج نسخه از tag
+      # ═══════════════════════════════════════════════════════
       - name: Get version from tag
         id: version
         run: |
-          echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+          TAG="${GITHUB_REF#refs/tags/}"
+          echo "tag=${TAG}" >> $GITHUB_OUTPUT
+          echo "📌 Version: ${TAG}"
 
-      # ───── قدم ۶: ساخت Release و آپلود فایل‌ها ─────
+      # ═══════════════════════════════════════════════════════
+      # ۶. اعتبارسنجی فایل‌های بیلد شده
+      # ═══════════════════════════════════════════════════════
+      - name: Verify build artifacts
+        run: |
+          set -e
+          for f in main.js manifest.json styles.css; do
+            if [ ! -f "$f" ]; then
+              echo "❌ Missing file: $f"
+              exit 1
+            fi
+            echo "✅ Found: $f ($(du -h "$f" | cut -f1))"
+          done
+
+      # ═══════════════════════════════════════════════════════
+      # ۷. ساخت فایل ZIP کامل
+      # ساختار: main.js, manifest.json, styles.css در ریشه
+      # (کاربرا فقط extract می‌کنن توی پوشه‌ی پلاگین)
+      # ═══════════════════════════════════════════════════════
+      - name: Create ZIP archive
+        run: |
+          set -e
+          ZIP_NAME="git-tasks-${{ steps.version.outputs.tag }}.zip"
+
+          # پوشه‌ی موقت
+          mkdir -p _release_files
+          cp main.js manifest.json styles.css _release_files/
+
+          # ساخت zip (فایل‌ها در ریشه، بدون پوشه‌ی اضافه)
+          cd _release_files
+          zip -r -9 "../${ZIP_NAME}" .
+          cd ..
+
+          # پاکسازی
+          rm -rf _release_files
+
+          echo "📦 Created: ${ZIP_NAME} ($(du -h "${ZIP_NAME}" | cut -f1))"
+          unzip -l "${ZIP_NAME}"
+
+      # ═══════════════════════════════════════════════════════
+      # ۸. ساخت Release و آپلود همه‌ی فایل‌ها
+      # ═══════════════════════════════════════════════════════
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
@@ -47,9 +105,11 @@ jobs:
           draft: false
           prerelease: false
           generate_release_notes: true
+          fail_on_unmatched_files: true
           files: |
             main.js
             manifest.json
             styles.css
+            git-tasks-${{ steps.version.outputs.tag }}.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
