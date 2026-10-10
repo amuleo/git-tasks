@@ -1,5 +1,8 @@
 /* ════════════════════════════════════════════════════════════
-   ⚙️ تب تنظیمات (رفع RTL، بخش‌بندی بهتر، دکمه راه‌اندازی مخزن)
+   ⚙️ تب تنظیمات پلاگین
+   ✅ فاصله همگام‌سازی با dropdown (۰.۲۵، ۰.۵، ۰.۷۵، صحیح)
+   ✅ دکمه Initialize
+   ✅ رفع i18n
    ════════════════════════════════════════════════════════════ */
 
 import { App, PluginSettingTab, Setting, Notice } from 'obsidian';
@@ -115,7 +118,6 @@ export class GitTasksSettingsTab extends PluginSettingTab {
                 });
             });
 
-        /* 🆕 دکمه راه‌اندازی مخزن */
         new Setting(containerEl)
             .setName(t(lang, 'settings_repo_init'))
             .setDesc(t(lang, 'settings_repo_init_desc'))
@@ -147,6 +149,12 @@ export class GitTasksSettingsTab extends PluginSettingTab {
                 .onChange(async (v) => {
                     this.plugin.settings.useJalaliDate = v;
                     await this.plugin.saveSettings();
+                    try {
+                        await this.plugin.taskManager.refreshStatsAfterSettingsChange();
+                        this.plugin.refreshPanel();
+                    } catch (e) {
+                        console.warn('[Git Tasks] Stats refresh failed:', e);
+                    }
                 }));
 
         new Setting(containerEl)
@@ -177,18 +185,38 @@ export class GitTasksSettingsTab extends PluginSettingTab {
                     await this.plugin.saveSettings();
                 }));
 
-        /* 🆕 پشتیبانی از اعشار (0.5 برای ۳۰ ثانیه) */
+        /* 🆕 فاصله همگام‌سازی با dropdown (فقط مقادیر مجاز) */
         new Setting(containerEl)
             .setName(t(lang, 'settings_sync_interval'))
             .setDesc(t(lang, 'settings_sync_interval_desc'))
-            .addText(text => {
-                text.inputEl.type = 'number';
-                text.inputEl.dir = 'ltr';
-                text.inputEl.min = '0';
-                text.inputEl.step = '0.5';
-                text.setValue(String(this.plugin.settings.autoSyncInterval)).onChange(async (v) => {
+            .addDropdown(dd => {
+                /* مقادیر مجاز: دقیقه */
+                const options: { value: number; label: string }[] = [
+                    { value: 0,     label: lang === 'fa' ? 'غیرفعال' : 'Disabled' },
+                    { value: 0.25,  label: lang === 'fa' ? '۱۵ ثانیه' : '15 seconds' },
+                    { value: 0.5,   label: lang === 'fa' ? '۳۰ ثانیه' : '30 seconds' },
+                    { value: 0.75,  label: lang === 'fa' ? '۴۵ ثانیه' : '45 seconds' },
+                    { value: 1,     label: lang === 'fa' ? '۱ دقیقه' : '1 minute' },
+                    { value: 2,     label: lang === 'fa' ? '۲ دقیقه' : '2 minutes' },
+                    { value: 5,     label: lang === 'fa' ? '۵ دقیقه' : '5 minutes' },
+                    { value: 10,    label: lang === 'fa' ? '۱۰ دقیقه' : '10 minutes' },
+                    { value: 15,    label: lang === 'fa' ? '۱۵ دقیقه' : '15 minutes' },
+                    { value: 30,    label: lang === 'fa' ? '۳۰ دقیقه' : '30 minutes' },
+                    { value: 60,    label: lang === 'fa' ? '۱ ساعت' : '1 hour' },
+                ];
+
+                for (const opt of options) {
+                    dd.addOption(String(opt.value), opt.label);
+                }
+
+                /* اگه مقدار فعلی توی لیست نبود، به ۰ برمی‌گردونیم */
+                const current = String(this.plugin.settings.autoSyncInterval);
+                const valid = options.some(o => String(o.value) === current);
+                dd.setValue(valid ? current : '0');
+
+                dd.onChange(async (v) => {
                     const n = parseFloat(v) || 0;
-                    this.plugin.settings.autoSyncInterval = Math.max(0, n);
+                    this.plugin.settings.autoSyncInterval = n;
                     await this.plugin.saveSettings();
                     this.plugin.restartAutoSync();
                 });
