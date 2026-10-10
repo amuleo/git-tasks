@@ -1,13 +1,10 @@
 name: Release Obsidian Plugin
 
-# این workflow وقتی اجرا می‌شه که یه tag با الگوی "عدد.عدد.عدد" پوش بشه
-# مثال: 0.1.0 یا 1.2.3
 on:
   push:
     tags:
       - "*.*.*"
 
-# دسترسی‌های لازم برای ساخت release
 permissions:
   contents: write
   id-token: write
@@ -19,32 +16,30 @@ jobs:
     steps:
       # ───── قدم ۱: چک‌اوت کردن مخزن ─────
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       # ───── قدم ۲: نصب Node.js ─────
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20.x'
-          cache: 'npm'
+          node-version: '22.x'
 
       # ───── قدم ۳: نصب وابستگی‌ها ─────
+      # از npm install استفاده می‌کنیم چون package-lock.json نداریم
       - name: Install dependencies
-        run: npm ci
+        run: npm install --no-audit --no-fund
 
       # ───── قدم ۴: بیلد کردن پلاگین ─────
       - name: Build plugin
         run: npm run build
 
       # ───── قدم ۵: استخراج نسخه از نام tag ─────
-      # مثلاً اگه tag = "0.1.0" باشه، TAG_NAME = "0.1.0" می‌شه
       - name: Get version from tag
         id: version
         run: |
           echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
 
       # ───── قدم ۶: چک کردن هماهنگی نسخه ─────
-      # مطمئن می‌شیم نسخه توی manifest.json با tag یکی‌ست
       - name: Verify manifest version matches tag
         run: |
           MANIFEST_VERSION=$(node -p "require('./manifest.json').version")
