@@ -1,8 +1,7 @@
 /* ════════════════════════════════════════════════════════════
    🔎 مودال جزئیات تسک
-   🔥 رفع باگ: خوندن مستقیم از inputEl.value هنگام ذخیره
+   ✅ عنوان مودال حذف شد
    ✅ پین فقط برای تسک‌های در انتظار
-   ✅ کلاس اختصاصی برای عنوان مودال
    ════════════════════════════════════════════════════════════ */
 
 import { App, Modal } from 'obsidian';
@@ -20,7 +19,6 @@ export class TaskDetailsModal extends Modal {
     private editCategory: string | null = null;
     private busy = false;
 
-    /* رفرنس به input های ویرایش */
     private titleInputEl: HTMLInputElement | null = null;
     private descInputEl: HTMLTextAreaElement | null = null;
 
@@ -45,24 +43,28 @@ export class TaskDetailsModal extends Modal {
         else this.renderViewMode(contentEl);
     }
 
+    /* ═══════════════════════════════════════════════════════
+       حالت نمایش
+       ✅ عنوان مودال حذف شد — مستقیم با عنوان تسک شروع می‌کنیم
+       ═══════════════════════════════════════════════════════ */
     private renderViewMode(parent: HTMLElement): void {
         const lang = this.plugin.settings.language;
 
+        /* 🆕 عنوان تسک + بج پین (بدون عنوان مودال) */
         const header = parent.createDiv({ cls: 'git-tasks-details-header' });
-        /* 🆕 عنوان با کلاس اختصاصی */
-        header.createEl('h3', {
-            text: t(lang, 'details_title'),
-            cls: 'git-tasks-modal-title',
-        });
+
+        /* عنوان تسک بزرگ */
+        const titleRow = header.createDiv({ cls: 'git-tasks-details-title-row' });
+        titleRow.createEl('h4', { text: this.task.title, cls: 'git-tasks-details-title' });
+
         if (this.task.pinned && !this.task.completed) {
-            header.createSpan({
+            titleRow.createSpan({
                 cls: 'git-tasks-pinned-badge',
                 text: '📌 ' + t(lang, 'pinned_badge'),
             });
         }
 
-        parent.createEl('h4', { text: this.task.title, cls: 'git-tasks-details-title' });
-
+        /* متادیتا */
         const meta = parent.createDiv({ cls: 'git-tasks-details-meta' });
         meta.createEl('div', {
             text: `${t(lang, 'details_created')}: ${formatDate(this.task, this.plugin.settings.useJalaliDate)}`,
@@ -83,10 +85,13 @@ export class TaskDetailsModal extends Modal {
             )}`,
         });
 
-        parent.createEl('h5', { text: t(lang, 'details_description') });
-        const descBox = parent.createDiv({ cls: 'git-tasks-details-desc' });
+        /* توضیحات */
+        const descSection = parent.createDiv({ cls: 'git-tasks-details-section' });
+        descSection.createEl('h5', { text: t(lang, 'details_description') });
+        const descBox = descSection.createDiv({ cls: 'git-tasks-details-desc' });
         descBox.setText(this.task.description || t(lang, 'details_no_description'));
 
+        /* دکمه‌ها */
         const actions = parent.createDiv({ cls: 'git-tasks-modal-buttons' });
 
         const editBtn = actions.createEl('button', { text: t(lang, 'btn_edit') });
@@ -124,13 +129,12 @@ export class TaskDetailsModal extends Modal {
         }
     }
 
+    /* ═══════════════════════════════════════════════════════
+       حالت ویرایش
+       ✅ عنوان مودال حذف شد
+       ═══════════════════════════════════════════════════════ */
     private renderEditMode(parent: HTMLElement): void {
         const lang = this.plugin.settings.language;
-        /* 🆕 عنوان با کلاس اختصاصی */
-        parent.createEl('h3', {
-            text: t(lang, 'edit_title'),
-            cls: 'git-tasks-modal-title',
-        });
 
         /* عنوان */
         parent.createEl('label', { text: t(lang, 'field_title') });
