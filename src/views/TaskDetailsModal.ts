@@ -1,12 +1,13 @@
 /* ════════════════════════════════════════════════════════════
-   🔎 مودال جزئیات تسک (با پین / آنپین)
+   🔎 مودال جزئیات تسک
+   ترتیب دکمه‌ها: ویرایش / حذف / پین / انجام شد
    ════════════════════════════════════════════════════════════ */
 
-import { App, Modal, Notice } from 'obsidian';
+import { App, Modal } from 'obsidian';
 import type GitTasksPlugin from '../main';
 import type { Task } from '../types';
 import { t, applyDirection } from '../i18n';
-import { formatDate } from '../utils/jalaliDate';
+import { formatDate, getJalaliString, getGregorianString } from '../utils/jalaliDate';
 
 export class TaskDetailsModal extends Modal {
     plugin: GitTasksPlugin;
@@ -37,15 +38,19 @@ export class TaskDetailsModal extends Modal {
         else this.renderViewMode(contentEl);
     }
 
-    /* ───── حالت نمایش ───── */
+    /* ═══════════════════════════════════════════════════
+       حالت نمایش
+       ═══════════════════════════════════════════════════ */
     private renderViewMode(parent: HTMLElement): void {
         const lang = this.plugin.settings.language;
 
-        /* هدر با عنوان و آیکون پین */
         const header = parent.createDiv({ cls: 'git-tasks-details-header' });
         header.createEl('h3', { text: t(lang, 'details_title') });
         if (this.task.pinned) {
-            header.createSpan({ cls: 'git-tasks-pinned-badge', text: '📌 ' + t(lang, 'pinned_badge') });
+            header.createSpan({
+                cls: 'git-tasks-pinned-badge',
+                text: '📌 ' + t(lang, 'pinned_badge'),
+            });
         }
 
         parent.createEl('h4', { text: this.task.title, cls: 'git-tasks-details-title' });
@@ -57,50 +62,34 @@ export class TaskDetailsModal extends Modal {
         });
         if (this.task.completed && this.task.completed_ts) {
             const d = new Date(this.task.completed_ts);
-            const { getJalaliString, getGregorianString } = require('../utils/jalaliDate');
-            const completedStr = this.plugin.settings.useJalaliDate
+            const str = this.plugin.settings.useJalaliDate
                 ? getJalaliString(d)
                 : getGregorianString(d);
-            meta.createEl('div', { text: `${t(lang, 'details_completed')}: ${completedStr}` });
+            meta.createEl('div', { text: `${t(lang, 'details_completed')}: ${str}` });
         }
         meta.createEl('div', {
             text: `${t(lang, 'details_status')}: ${this.task.completed ? t(lang, 'task_done') : t(lang, 'task_pending')}`,
         });
         meta.createEl('div', {
-            text: `${t(lang, 'details_category')}: ${this.plugin.taskManager.getCategoryName(this.task.category)}`,
+            text: `${t(lang, 'details_category')}: ${this.plugin.taskManager.getCategoryName(
+                this.task.category, t(lang, 'panel_no_category')
+            )}`,
         });
 
-        /* توضیحات */
         parent.createEl('h5', { text: t(lang, 'details_description') });
         const descBox = parent.createDiv({ cls: 'git-tasks-details-desc' });
         descBox.setText(this.task.description || t(lang, 'details_no_description'));
 
-        /* دکمه‌ها - دو ردیف */
+        /* ═══════════════════════════════════════════════
+           🔥 دکمه‌ها (همه در یه ردیف)
+           ترتیب DOM: Edit, Delete, Pin, MarkDone
+           در LTR: از چپ به راست ← Edit, Delete, Pin, MarkDone
+           در RTL: از راست به چپ ← Edit, Delete, Pin, MarkDone
+           ═══════════════════════════════════════════════ */
         const actions = parent.createDiv({ cls: 'git-tasks-modal-buttons' });
 
-        /* ردیف اول: پین */
-        const pinBtn = actions.createEl('button', {
-            text: this.task.pinned ? t(lang, 'btn_unpin') : t(lang, 'btn_pin'),
-        });
-        pinBtn.onclick = () => this.handleTogglePin();
-
-        /* ردیف اصلی */
-        const mainActions = parent.createDiv({ cls: 'git-tasks-modal-buttons git-tasks-main-actions' });
-
-        if (this.task.completed) {
-            const pendingBtn = mainActions.createEl('button', {
-                text: t(lang, 'btn_mark_pending'),
-            });
-            pendingBtn.onclick = () => this.handleUncomplete();
-        } else {
-            const doneBtn = mainActions.createEl('button', {
-                text: t(lang, 'btn_mark_done'),
-                cls: 'mod-cta',
-            });
-            doneBtn.onclick = () => this.handleComplete();
-        }
-
-        const editBtn = mainActions.createEl('button', { text: t(lang, 'btn_edit') });
+        /* ۱. ویرایش */
+        const editBtn = actions.createEl('button', { text: t(lang, 'btn_edit') });
         editBtn.onclick = () => {
             this.editing = true;
             this.editTitle = this.task.title;
@@ -109,14 +98,38 @@ export class TaskDetailsModal extends Modal {
             this.render();
         };
 
-        const delBtn = mainActions.createEl('button', {
+        /* ۲. حذف */
+        const delBtn = actions.createEl('button', {
             text: t(lang, 'btn_delete'),
             cls: 'mod-warning',
         });
         delBtn.onclick = () => this.handleDelete();
+
+        /* ۳. پین / آنپین */
+        const pinBtn = actions.createEl('button', {
+            text: this.task.pinned ? t(lang, 'btn_unpin') : t(lang, 'btn_pin'),
+        });
+        pinBtn.onclick = () => this.handleTogglePin();
+
+        /* ۴. انجام شد / برگردون به در انتظار */
+        if (this.task.completed) {
+            const pendingBtn = actions.createEl('button', {
+                text: t(lang, 'btn_mark_pending'),
+                cls: 'mod-cta',
+            });
+            pendingBtn.onclick = () => this.handleUncomplete();
+        } else {
+            const doneBtn = actions.createEl('button', {
+                text: t(lang, 'btn_mark_done'),
+                cls: 'mod-cta',
+            });
+            doneBtn.onclick = () => this.handleComplete();
+        }
     }
 
-    /* ───── حالت ویرایش ───── */
+    /* ═══════════════════════════════════════════════════
+       حالت ویرایش
+       ═══════════════════════════════════════════════════ */
     private renderEditMode(parent: HTMLElement): void {
         const lang = this.plugin.settings.language;
         parent.createEl('h3', { text: t(lang, 'edit_title') });
@@ -149,15 +162,26 @@ export class TaskDetailsModal extends Modal {
         saveBtn.onclick = () => this.handleSave();
     }
 
-    /* ───── عملیات ───── */
+    /* ═══════════════════════════════════════════════════
+       🔥 پین / آنپین (رفع باگ: پیام درست + بروزرسانی سریع)
+       ═══════════════════════════════════════════════════ */
     private async handleTogglePin(): Promise<void> {
         const lang = this.plugin.settings.language;
-        const ok = await this.plugin.taskManager.togglePin(this.task);
-        if (ok) {
-            this.task.pinned = !this.task.pinned;
-            new Notice(t(lang, this.task.pinned ? 'notice_task_pinned' : 'notice_task_unpinned'));
+        const res = await this.plugin.taskManager.togglePin(this.task);
+
+        if (res.ok) {
+            /* پیام درست بر اساس مقدار جدید */
+            const msgKey = res.pinned ? 'notice_task_pinned' : 'notice_task_unpinned';
+            this.plugin.toastManager.show(t(lang, msgKey), 'success');
+
+            /* بروزرسانی سریع مودال + پنل */
             this.onDone();
             this.render();
+        } else {
+            this.plugin.toastManager.show(
+                t(lang, 'notice_sync_fail', { error: 'pin failed' }),
+                'error'
+            );
         }
     }
 
@@ -165,7 +189,7 @@ export class TaskDetailsModal extends Modal {
         const lang = this.plugin.settings.language;
         const ok = await this.plugin.taskManager.completeTask(this.task);
         if (ok) {
-            new Notice(t(lang, 'notice_task_completed'));
+            this.plugin.toastManager.show(t(lang, 'notice_task_completed'), 'success');
             if (this.plugin.settings.autoSyncAfterEdit) await this.plugin.taskManager.sync(false);
             this.onDone();
             this.close();
@@ -176,7 +200,7 @@ export class TaskDetailsModal extends Modal {
         const lang = this.plugin.settings.language;
         const ok = await this.plugin.taskManager.uncompleteTask(this.task);
         if (ok) {
-            new Notice(t(lang, 'notice_task_updated'));
+            this.plugin.toastManager.show(t(lang, 'notice_task_updated'), 'success');
             if (this.plugin.settings.autoSyncAfterEdit) await this.plugin.taskManager.sync(false);
             this.onDone();
             this.close();
@@ -186,7 +210,7 @@ export class TaskDetailsModal extends Modal {
     private async handleSave(): Promise<void> {
         const lang = this.plugin.settings.language;
         if (!this.editTitle.trim()) {
-            new Notice(t(lang, 'notice_no_title'));
+            this.plugin.toastManager.show(t(lang, 'notice_no_title'), 'warning');
             return;
         }
         const ok = await this.plugin.taskManager.updateTask(this.task, {
@@ -195,10 +219,7 @@ export class TaskDetailsModal extends Modal {
             category: this.editCategory,
         });
         if (ok) {
-            new Notice(t(lang, 'notice_task_updated'));
-            this.task.title = this.editTitle.trim();
-            this.task.description = this.editDescription.trim();
-            this.task.category = this.editCategory;
+            this.plugin.toastManager.show(t(lang, 'notice_task_updated'), 'success');
             this.editing = false;
             if (this.plugin.settings.autoSyncAfterEdit) await this.plugin.taskManager.sync(false);
             this.onDone();
@@ -211,7 +232,7 @@ export class TaskDetailsModal extends Modal {
         if (!window.confirm(t(lang, 'confirm_delete_body'))) return;
         const ok = await this.plugin.taskManager.softDelete(this.task);
         if (ok) {
-            new Notice(t(lang, 'notice_task_deleted'));
+            this.plugin.toastManager.show(t(lang, 'notice_task_deleted'), 'success');
             this.onDone();
             this.close();
         }
