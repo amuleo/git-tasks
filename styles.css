@@ -1,7 +1,8 @@
 /* ════════════════════════════════════════════════════════════
-   🎨 استایل‌های Git Tasks v0.1.7
+   🎨 استایل‌های Git Tasks v0.1.8
    ✅ Toast با فاصله هوشمند از بالا (موبایل/دسکتاپ)
    ✅ پدینگ ۱۰px زیر جداکننده‌های تنظیمات
+   ✅ انیمیشن خروج نرم Toast (fade-out هنگام کلیک)
    ════════════════════════════════════════════════════════════ */
 
 /* ═══════════════════════════════════════════════════════════
@@ -58,6 +59,14 @@
 .git-tasks-toast.is-visible {
     opacity: 1;
     transform: translateY(0);
+}
+
+/* 🆕 انیمیشن خروج نرم (کلیک یا پایان زمان) */
+.git-tasks-toast.is-exiting {
+    opacity: 0 !important;
+    transform: translateY(-12px) scale(0.95) !important;
+    transition: opacity 0.25s ease, transform 0.25s ease !important;
+    pointer-events: none !important;
 }
 
 .git-tasks-toast-success { border-inline-start: 4px solid #2ecc71; }
