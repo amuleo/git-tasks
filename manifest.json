@@ -4,7 +4,7 @@
     "version": "0.1.2",
     "minAppVersion": "1.4.0",
     "description": "Manage your tasks and store them in a GitHub repository. Each task is a folder with a title file and a README file. Categories are managed via a JSON file in the repo.",
-    "author": "Your Name",
-    "authorUrl": "",
+    "author": "amuleo",
+    "authorUrl": "https://github.com/amuleo",
     "isDesktopOnly": false
 }
