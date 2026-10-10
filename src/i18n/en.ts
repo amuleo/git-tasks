@@ -5,11 +5,9 @@
 export default {
     plugin_name: 'Git Tasks',
 
-    /* ───── Tabs ───── */
     tab_pending: 'Tasks',
     tab_completed: 'Completed',
 
-    /* ───── Panel ───── */
     panel_title: 'Tasks',
     panel_title_completed: 'Completed tasks',
     panel_empty: 'All tasks are done!',
@@ -23,7 +21,6 @@ export default {
     panel_all_categories: 'All categories',
     panel_no_category: 'No category',
 
-    /* ───── Stats cards ───── */
     stats_today: 'Today',
     stats_yesterday: 'Yesterday',
     stats_this_week: 'This week',
@@ -31,12 +28,10 @@ export default {
     stats_this_year: 'This year',
     stats_total: 'Total',
 
-    /* ───── Task ───── */
     task_pending: 'Pending',
     task_done: 'Done',
     pinned_badge: 'Pinned',
 
-    /* ───── Modals ───── */
     create_title: 'New task',
     edit_title: 'Edit task',
     details_title: 'Task details',
@@ -52,21 +47,18 @@ export default {
     details_description: 'Description',
     details_no_description: 'No description',
 
-    /* ───── Buttons ───── */
     btn_cancel: 'Cancel',
     btn_save: 'Save',
     btn_create: 'Create',
-    btn_mark_done: 'Mark as done',
-    btn_mark_pending: 'Mark as pending',
+    btn_mark_done: 'Done',
+    btn_mark_pending: 'Restore',   /* 🆕 تک کلمه */
     btn_edit: 'Edit',
     btn_delete: 'Delete',
     btn_pin: 'Pin',
     btn_unpin: 'Unpin',
 
-    /* ───── Confirm ───── */
     confirm_delete_body: 'The task will be hidden from the list.',
 
-    /* ───── Settings ───── */
     settings_title: 'Git Tasks Settings',
 
     settings_language: 'Language',
@@ -107,7 +99,6 @@ export default {
     settings_sync_after_edit: 'Sync after changes',
     settings_sync_after_edit_desc: 'Push changes to GitHub right away',
 
-    /* ───── Notices ───── */
     notice_task_created: 'Task created',
     notice_task_updated: 'Task updated',
     notice_task_completed: 'Task completed',
