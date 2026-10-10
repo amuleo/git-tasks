@@ -2,7 +2,7 @@
    ➕ مودال ساخت تسک جدید
    ════════════════════════════════════════════════════════════ */
 
-import { App, Modal, Notice, Setting } from 'obsidian';
+import { App, Modal, Setting } from 'obsidian';
 import type GitTasksPlugin from '../main';
 import { t, applyDirection } from '../i18n';
 
@@ -27,17 +27,14 @@ export class CreateTaskModal extends Modal {
 
         contentEl.createEl('h3', { text: t(lang, 'create_title') });
 
-        /* عنوان */
         new Setting(contentEl)
             .setName(t(lang, 'field_title'))
             .addText(text => {
                 text.setPlaceholder(t(lang, 'field_title_placeholder'))
                     .onChange(v => { this.title = v; });
-                /* فوکوس خودکار روی عنوان */
                 setTimeout(() => text.inputEl.focus(), 50);
             });
 
-        /* توضیحات */
         new Setting(contentEl)
             .setName(t(lang, 'field_description'))
             .addTextArea(ta => {
@@ -47,7 +44,6 @@ export class CreateTaskModal extends Modal {
                 ta.inputEl.style.width = '100%';
             });
 
-        /* دسته‌بندی */
         const cats = this.plugin.taskManager.getCategories();
         new Setting(contentEl)
             .setName(t(lang, 'field_category'))
@@ -61,7 +57,6 @@ export class CreateTaskModal extends Modal {
                 dd.onChange(v => { this.category = v || null; });
             });
 
-        /* دکمه‌ها */
         const btnRow = contentEl.createDiv({ cls: 'git-tasks-modal-buttons' });
 
         const cancel = btnRow.createEl('button', { text: t(lang, 'btn_cancel') });
@@ -74,12 +69,11 @@ export class CreateTaskModal extends Modal {
         save.onclick = () => this.submit();
     }
 
-    /* ارسال تسک به گیت‌هاب */
     private async submit(): Promise<void> {
         const lang = this.plugin.settings.language;
 
         if (!this.title.trim()) {
-            new Notice(t(lang, 'notice_no_title'));
+            this.plugin.toastManager.show(t(lang, 'notice_no_title'), 'warning');
             return;
         }
 
@@ -90,19 +84,19 @@ export class CreateTaskModal extends Modal {
         );
 
         if (ok) {
-            new Notice(t(lang, 'notice_task_created'));
-            /* سینک خودکار بعد از ساخت (اگه روشن باشه) */
+            this.plugin.toastManager.show(t(lang, 'notice_task_created'), 'success');
             if (this.plugin.settings.autoSyncAfterEdit) {
                 await this.plugin.taskManager.sync(false);
             }
             this.onDone();
             this.close();
         } else {
-            new Notice(t(lang, 'notice_sync_fail', { error: 'create failed' }));
+            this.plugin.toastManager.show(
+                t(lang, 'notice_sync_fail', { error: 'create failed' }),
+                'error'
+            );
         }
     }
 
-    onClose(): void {
-        this.contentEl.empty();
-    }
+    onClose(): void { this.contentEl.empty(); }
 }
