@@ -1,8 +1,7 @@
 /* ════════════════════════════════════════════════════════════
    ➕ مودال ساخت تسک جدید
-   🔥 رفع باگ: خوندن مستقیم از inputEl.value در لحظه submit
-      (چون onChange در Obsidian API فوری نیست)
-   ✅ کلاس اختصاصی برای عنوان مودال
+   ✅ عنوان مودال حذف شد (به جای CSS override)
+   ✅ خوندن مستقیم از inputEl.value در لحظه submit
    ════════════════════════════════════════════════════════════ */
 
 import { App, Modal, Setting, TextComponent, TextAreaComponent } from 'obsidian';
@@ -33,13 +32,9 @@ export class CreateTaskModal extends Modal {
         const lang = this.plugin.settings.language;
         applyDirection(contentEl, lang);
 
-        /* 🆕 عنوان با کلاس اختصاصی */
-        contentEl.createEl('h3', {
-            text: t(lang, 'create_title'),
-            cls: 'git-tasks-modal-title',
-        });
+        /* 🆕 عنوان حذف شد — مستقیم می‌ریم سراغ فیلدها */
 
-        /* عنوان */
+        /* عنوان تسک */
         new Setting(contentEl)
             .setName(t(lang, 'field_title'))
             .addText(text => {
@@ -85,9 +80,6 @@ export class CreateTaskModal extends Modal {
         save.onclick = () => this.submit();
     }
 
-    /* ═══════════════════════════════════════════════════════
-       🔥 در لحظه‌ی submit، مستقیم از DOM می‌خونیم
-       ═══════════════════════════════════════════════════════ */
     private async submit(): Promise<void> {
         if (this.submitting) return;
         const lang = this.plugin.settings.language;
