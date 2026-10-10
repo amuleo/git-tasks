@@ -4,13 +4,12 @@
 
 /* ───── دسته‌بندی ───── */
 export interface Category {
-    id: string;           // شناسه یکتا (مثلاً "work")
-    name: string;         // نام انگلیسی
-    name_fa?: string;     // نام فارسی (اختیاری)
-    color?: string;       // رنگ اختیاری برای نمایش (hex)
+    id: string;
+    name: string;
+    name_fa?: string;
+    color?: string;
 }
 
-/* ───── فایل تنظیمات دسته‌بندی در گیت‌هاب ───── */
 export interface CategoryFile {
     version: number;
     categories: Category[];
@@ -18,17 +17,35 @@ export interface CategoryFile {
 
 /* ───── تسک ───── */
 export interface Task {
-    id: string;                    // شناسه (نام فولدر در گیت‌هاب)
-    title: string;                 // عنوان تسک
-    description: string;           // توضیحات
-    category: string | null;       // شناسه دسته‌بندی یا null
-    completed: boolean;            // انجام شده؟
-    deleted: boolean;              // حذف نرم شده؟
-    created_jalali: string;        // تاریخ شمسی به شکل "1405/07/18 - 14:30"
-    created_gregorian: string;     // تاریخ میلادی به شکل "2026-10-10 14:30"
-    created_ts: number;            // timestamp برای مرتب‌سازی
-    updated_ts: number;            // آخرین آپدیت
-    sha?: string;                  // SHA فایل README (برای ویرایش)
+    id: string;
+    title: string;
+    description: string;
+    category: string | null;
+    completed: boolean;
+    deleted: boolean;
+    pinned: boolean;               // 🆕 پین شده؟
+    created_jalali: string;
+    created_gregorian: string;
+    created_ts: number;
+    updated_ts: number;
+    completed_ts: number;          // 🆕 زمان تکمیل (برای آمار)
+    sha?: string;
+}
+
+/* ───── فایل index.json (ذخیره‌ی آمار) ───── */
+export interface CompletedStats {
+    today: number;
+    yesterday: number;
+    this_week: number;
+    last_month: number;
+    this_year: number;
+    total: number;
+}
+
+export interface IndexFile {
+    version: number;
+    last_updated: number;
+    stats: CompletedStats;
 }
 
 /* ───── تنظیمات پلاگین ───── */
@@ -36,15 +53,15 @@ export type Language = 'en' | 'fa';
 
 export interface GitTasksSettings {
     language: Language;
-    token: string;                 // توکن دسترسی گیت‌هاب
-    username: string;              // نام کاربری گیت‌هاب (خودکار پر می‌شه)
-    repo: string;                  // نام مخزن
-    branch: string;                // شاخه (پیش‌فرض: main)
-    useJalaliDate: boolean;        // نمایش تاریخ شمسی
-    tasksPerPage: number;          // تعداد تسک در هر بار
-    autoSyncOnOpen: boolean;       // سینک هنگام باز شدن پنل
-    autoSyncInterval: number;      // سینک هر X دقیقه (0 = غیرفعال)
-    autoSyncAfterEdit: boolean;    // سینک بعد از ساخت/ویرایش
+    token: string;
+    username: string;
+    repo: string;
+    branch: string;
+    useJalaliDate: boolean;
+    tasksPerPage: number;
+    autoSyncOnOpen: boolean;
+    autoSyncInterval: number;
+    autoSyncAfterEdit: boolean;
 }
 
 export const DEFAULT_SETTINGS: GitTasksSettings = {
@@ -60,14 +77,7 @@ export const DEFAULT_SETTINGS: GitTasksSettings = {
     autoSyncAfterEdit: false,
 };
 
-/* ───── نتیجه تست اتصال ───── */
-export interface ConnectionTestResult {
-    success: boolean;
-    username?: string;
-    error?: string;
-}
-
-/* ───── اطلاعات مخزن برای dropdown ───── */
+/* ───── اطلاعات مخزن ───── */
 export interface RepoInfo {
     name: string;
     full_name: string;
