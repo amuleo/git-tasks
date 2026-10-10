@@ -51,7 +51,7 @@ export default {
     btn_save: 'ذخیره',
     btn_create: 'ایجاد',
     btn_mark_done: 'انجام شد',
-    btn_mark_pending: 'برگرداندن',   /* 🆕 فقط تک کلمه */
+    btn_mark_pending: 'برگرداندن',
     btn_edit: 'ویرایش',
     btn_delete: 'حذف',
     btn_pin: 'پین کردن',
@@ -99,6 +99,7 @@ export default {
     settings_sync_after_edit: 'همگام‌سازی بعد از تغییرات',
     settings_sync_after_edit_desc: 'تغییرات فوری به گیت‌هاب فرستاده بشن',
 
+    /* اعلان‌های عمومی */
     notice_task_created: 'تسک ساخته شد',
     notice_task_updated: 'تسک ویرایش شد',
     notice_task_completed: 'تسک انجام شد',
@@ -111,4 +112,11 @@ export default {
     notice_fill_repo: 'اول یه مخزن انتخاب کن',
     notice_no_title: 'عنوان الزامیه',
     notice_index_ok: 'آمار بروزرسانی شد',
+
+    /* 🆕 اعلان‌های خطای اختصاصی */
+    notice_create_failed: 'تسک ساخته نشد',
+    notice_update_failed: 'تسک ویرایش نشد',
+    notice_delete_failed: 'تسک حذف نشد',
+    notice_pin_failed: 'تسک پین نشد',
+    notice_unpin_failed: 'پین تسک برداشته نشد',
 };
