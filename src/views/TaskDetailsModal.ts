@@ -1,7 +1,8 @@
 /* ════════════════════════════════════════════════════════════
    🔎 مودال جزئیات تسک
    ترتیب دکمه‌ها: ویرایش / حذف / پین / انجام شد
-   ✅ همه‌ی عملیات مودال رو فوری می‌بندن
+   ✅ پین فقط برای تسک‌های در انتظار (نه انجام‌شده)
+   ✅ مودال فوری بسته می‌شه
    ════════════════════════════════════════════════════════════ */
 
 import { App, Modal } from 'obsidian';
@@ -48,7 +49,8 @@ export class TaskDetailsModal extends Modal {
 
         const header = parent.createDiv({ cls: 'git-tasks-details-header' });
         header.createEl('h3', { text: t(lang, 'details_title') });
-        if (this.task.pinned) {
+        /* 🔥 بج پین فقط برای تسک‌های در انتظار */
+        if (this.task.pinned && !this.task.completed) {
             header.createSpan({
                 cls: 'git-tasks-pinned-badge',
                 text: '📌 ' + t(lang, 'pinned_badge'),
@@ -82,7 +84,7 @@ export class TaskDetailsModal extends Modal {
         const descBox = parent.createDiv({ cls: 'git-tasks-details-desc' });
         descBox.setText(this.task.description || t(lang, 'details_no_description'));
 
-        /* دکمه‌ها: Edit / Delete / Pin / Done */
+        /* دکمه‌ها */
         const actions = parent.createDiv({ cls: 'git-tasks-modal-buttons' });
 
         /* ۱. ویرایش */
@@ -102,13 +104,15 @@ export class TaskDetailsModal extends Modal {
         });
         delBtn.onclick = () => this.handleDelete();
 
-        /* ۳. پین / آنپین */
-        const pinBtn = actions.createEl('button', {
-            text: this.task.pinned ? t(lang, 'btn_unpin') : t(lang, 'btn_pin'),
-        });
-        pinBtn.onclick = () => this.handleTogglePin();
+        /* ۳. پین / آنپین — 🔥 فقط برای تسک‌های در انتظار */
+        if (!this.task.completed) {
+            const pinBtn = actions.createEl('button', {
+                text: this.task.pinned ? t(lang, 'btn_unpin') : t(lang, 'btn_pin'),
+            });
+            pinBtn.onclick = () => this.handleTogglePin();
+        }
 
-        /* ۴. انجام شد / در انتظار */
+        /* ۴. انجام شد / برگرداندن */
         if (this.task.completed) {
             const pendingBtn = actions.createEl('button', {
                 text: t(lang, 'btn_mark_pending'),
@@ -172,12 +176,8 @@ export class TaskDetailsModal extends Modal {
         if (res.ok) {
             const msgKey = res.pinned ? 'notice_task_pinned' : 'notice_task_unpinned';
             this.plugin.toastManager.show(t(lang, msgKey), 'success');
-
-            /* رفرش پنل + بستن مودال */
             this.onDone();
             this.close();
-
-            /* sync پس‌زمینه */
             if (this.plugin.settings.autoSyncAfterEdit) {
                 this.plugin.taskManager.sync(false).catch(() => {});
             }
