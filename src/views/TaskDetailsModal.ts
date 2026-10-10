@@ -1,7 +1,7 @@
 /* ════════════════════════════════════════════════════════════
    🔎 مودال جزئیات تسک
+   🔥 رفع باگ: خوندن مستقیم از inputEl.value هنگام ذخیره
    ✅ پین فقط برای تسک‌های در انتظار
-   ✅ i18n کامل پیام خطا
    ════════════════════════════════════════════════════════════ */
 
 import { App, Modal } from 'obsidian';
@@ -16,10 +16,12 @@ export class TaskDetailsModal extends Modal {
     onDone: () => void;
 
     private editing = false;
-    private editTitle = '';
-    private editDescription = '';
     private editCategory: string | null = null;
     private busy = false;
+
+    /* 🆕 رفرنس به input های ویرایش */
+    private titleInputEl: HTMLInputElement | null = null;
+    private descInputEl: HTMLTextAreaElement | null = null;
 
     constructor(app: App, plugin: GitTasksPlugin, task: Task, onDone: () => void) {
         super(app);
@@ -33,7 +35,6 @@ export class TaskDetailsModal extends Modal {
     private render(): void {
         const { contentEl } = this;
         contentEl.empty();
-        /* 🆕 کلاس اختصاصی برای استایل مودال */
         contentEl.addClass('git-tasks-modal-content');
 
         const lang = this.plugin.settings.language;
@@ -86,8 +87,6 @@ export class TaskDetailsModal extends Modal {
         const editBtn = actions.createEl('button', { text: t(lang, 'btn_edit') });
         editBtn.onclick = () => {
             this.editing = true;
-            this.editTitle = this.task.title;
-            this.editDescription = this.task.description;
             this.editCategory = this.task.category;
             this.render();
         };
@@ -98,7 +97,6 @@ export class TaskDetailsModal extends Modal {
         });
         delBtn.onclick = () => this.handleDelete();
 
-        /* پین فقط برای در انتظار */
         if (!this.task.completed) {
             const pinBtn = actions.createEl('button', {
                 text: this.task.pinned ? t(lang, 'btn_unpin') : t(lang, 'btn_pin'),
@@ -125,17 +123,20 @@ export class TaskDetailsModal extends Modal {
         const lang = this.plugin.settings.language;
         parent.createEl('h3', { text: t(lang, 'edit_title') });
 
+        /* عنوان */
         parent.createEl('label', { text: t(lang, 'field_title') });
         const titleInput = parent.createEl('input', { type: 'text', cls: 'git-tasks-input' });
-        titleInput.value = this.editTitle;
-        titleInput.oninput = () => { this.editTitle = titleInput.value; };
+        titleInput.value = this.task.title;
+        this.titleInputEl = titleInput;  /* 🆕 رفرنس */
 
+        /* توضیحات */
         parent.createEl('label', { text: t(lang, 'field_description') });
         const descInput = parent.createEl('textarea', { cls: 'git-tasks-textarea' });
         descInput.rows = 5;
-        descInput.value = this.editDescription;
-        descInput.oninput = () => { this.editDescription = descInput.value; };
+        descInput.value = this.task.description || '';
+        this.descInputEl = descInput;  /* 🆕 رفرنس */
 
+        /* دسته‌بندی */
         parent.createEl('label', { text: t(lang, 'field_category') });
         const select = parent.createEl('select', { cls: 'dropdown' });
         select.createEl('option', { value: '', text: t(lang, 'panel_no_category') });
@@ -208,19 +209,30 @@ export class TaskDetailsModal extends Modal {
         }
     }
 
+    /* ═══════════════════════════════════════════════════════
+       🔥 ذخیره ویرایش: خوندن مستقیم از inputEl.value
+       ═══════════════════════════════════════════════════════ */
     private async handleSave(): Promise<void> {
         if (this.busy) return;
         const lang = this.plugin.settings.language;
-        if (!this.editTitle.trim()) {
+
+        /* 🆕 خوندن مستقیم از DOM */
+        const title = (this.titleInputEl?.value ?? '').trim();
+        const description = (this.descInputEl?.value ?? '').trim();
+
+        if (!title) {
             this.plugin.toastManager.show(t(lang, 'notice_no_title'), 'warning');
             return;
         }
+
         this.busy = true;
+
         const ok = await this.plugin.taskManager.updateTask(this.task, {
-            title: this.editTitle.trim(),
-            description: this.editDescription.trim(),
+            title,
+            description,
             category: this.editCategory,
         });
+
         if (ok) {
             this.plugin.toastManager.show(t(lang, 'notice_task_updated'), 'success');
             this.onDone();
