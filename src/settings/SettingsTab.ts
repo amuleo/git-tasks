@@ -1,6 +1,7 @@
 /* ════════════════════════════════════════════════════════════
    ⚙️ تب تنظیمات پلاگین
-   ✅ فاصله همگام‌سازی با dropdown (۰.۲۵، ۰.۵، ۰.۷۵، صحیح)
+   ✅ تعداد تسک با dropdown (۵ تا ۳۰، پیش‌فرض ۱۰)
+   ✅ فاصله همگام‌سازی با dropdown
    ✅ دکمه Initialize
    ✅ رفع i18n
    ════════════════════════════════════════════════════════════ */
@@ -157,18 +158,30 @@ export class GitTasksSettingsTab extends PluginSettingTab {
                     }
                 }));
 
+        /* 🆕 تعداد تسک در هر صفحه — dropdown */
         new Setting(containerEl)
             .setName(t(lang, 'settings_per_page'))
             .setDesc(t(lang, 'settings_per_page_desc'))
-            .addText(text => {
-                text.inputEl.type = 'number';
-                text.inputEl.dir = 'ltr';
-                text.inputEl.min = '5';
-                text.inputEl.max = '100';
-                text.setValue(String(this.plugin.settings.tasksPerPage)).onChange(async (v) => {
-                    const n = parseInt(v) || 20;
-                    this.plugin.settings.tasksPerPage = Math.max(5, Math.min(100, n));
+            .addDropdown(dd => {
+                /* مقادیر مجاز: ۵ تا ۳۰ */
+                const options = [5, 10, 15, 20, 25, 30];
+
+                for (const n of options) {
+                    dd.addOption(String(n), String(n));
+                }
+
+                /* مقدار فعلی */
+                let current = this.plugin.settings.tasksPerPage;
+                if (!options.includes(current)) {
+                    current = 10;
+                }
+                dd.setValue(String(current));
+
+                dd.onChange(async (v) => {
+                    const n = parseInt(v) || 10;
+                    this.plugin.settings.tasksPerPage = n;
                     await this.plugin.saveSettings();
+                    this.plugin.refreshPanel();
                 });
             });
 
@@ -185,12 +198,11 @@ export class GitTasksSettingsTab extends PluginSettingTab {
                     await this.plugin.saveSettings();
                 }));
 
-        /* 🆕 فاصله همگام‌سازی با dropdown (فقط مقادیر مجاز) */
+        /* 🆕 فاصله همگام‌سازی — dropdown */
         new Setting(containerEl)
             .setName(t(lang, 'settings_sync_interval'))
             .setDesc(t(lang, 'settings_sync_interval_desc'))
             .addDropdown(dd => {
-                /* مقادیر مجاز: دقیقه */
                 const options: { value: number; label: string }[] = [
                     { value: 0,     label: lang === 'fa' ? 'غیرفعال' : 'Disabled' },
                     { value: 0.25,  label: lang === 'fa' ? '۱۵ ثانیه' : '15 seconds' },
@@ -209,7 +221,6 @@ export class GitTasksSettingsTab extends PluginSettingTab {
                     dd.addOption(String(opt.value), opt.label);
                 }
 
-                /* اگه مقدار فعلی توی لیست نبود، به ۰ برمی‌گردونیم */
                 const current = String(this.plugin.settings.autoSyncInterval);
                 const valid = options.some(o => String(o.value) === current);
                 dd.setValue(valid ? current : '0');
