@@ -1,7 +1,7 @@
 {
     "id": "git-tasks",
     "name": "Git Tasks",
-    "version": "0.1.0",
+    "version": "0.1.1",
     "minAppVersion": "1.4.0",
     "description": "Manage your tasks and store them in a GitHub repository. Each task is a folder with a title file and a README file. Categories are managed via a JSON file in the repo.",
     "author": "Your Name",
