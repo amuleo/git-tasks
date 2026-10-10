@@ -1,20 +1,22 @@
 /* ════════════════════════════════════════════════════════════
    ➕ مودال ساخت تسک جدید
-   ✅ i18n کامل پیام خطا
-   ✅ RTL تمیز (بدون overrides مودال)
+   🔥 رفع باگ: خوندن مستقیم از inputEl.value در لحظه submit
+      (چون onChange در Obsidian API فوری نیست)
    ════════════════════════════════════════════════════════════ */
 
-import { App, Modal, Setting } from 'obsidian';
+import { App, Modal, Setting, TextComponent, TextAreaComponent } from 'obsidian';
 import type GitTasksPlugin from '../main';
 import { t, applyDirection } from '../i18n';
 
 export class CreateTaskModal extends Modal {
     plugin: GitTasksPlugin;
     onDone: () => void;
-    private title = '';
-    private description = '';
     private category: string | null = null;
     private submitting = false;
+
+    /* 🆕 نگه‌داری رفرنس به کامپوننت‌ها */
+    private titleComponent: TextComponent | null = null;
+    private descriptionComponent: TextAreaComponent | null = null;
 
     constructor(app: App, plugin: GitTasksPlugin, onDone: () => void) {
         super(app);
@@ -25,7 +27,6 @@ export class CreateTaskModal extends Modal {
     onOpen(): void {
         const { contentEl } = this;
         contentEl.empty();
-        /* 🆕 کلاس اختصاصی برای استایل مودال */
         contentEl.addClass('git-tasks-modal-content');
 
         const lang = this.plugin.settings.language;
@@ -33,23 +34,26 @@ export class CreateTaskModal extends Modal {
 
         contentEl.createEl('h3', { text: t(lang, 'create_title') });
 
+        /* عنوان */
         new Setting(contentEl)
             .setName(t(lang, 'field_title'))
             .addText(text => {
-                text.setPlaceholder(t(lang, 'field_title_placeholder'))
-                    .onChange(v => { this.title = v; });
+                this.titleComponent = text;
+                text.setPlaceholder(t(lang, 'field_title_placeholder'));
                 setTimeout(() => text.inputEl.focus(), 50);
             });
 
+        /* توضیحات */
         new Setting(contentEl)
             .setName(t(lang, 'field_description'))
             .addTextArea(ta => {
-                ta.setPlaceholder(t(lang, 'field_description_placeholder'))
-                    .onChange(v => { this.description = v; });
+                this.descriptionComponent = ta;
+                ta.setPlaceholder(t(lang, 'field_description_placeholder'));
                 ta.inputEl.rows = 4;
                 ta.inputEl.style.width = '100%';
             });
 
+        /* دسته‌بندی */
         const cats = this.plugin.taskManager.getCategories();
         new Setting(contentEl)
             .setName(t(lang, 'field_category'))
@@ -63,7 +67,7 @@ export class CreateTaskModal extends Modal {
                 dd.onChange(v => { this.category = v || null; });
             });
 
-        /* دکمه‌ها - ستونی */
+        /* دکمه‌ها */
         const btnRow = contentEl.createDiv({ cls: 'git-tasks-modal-buttons-stack' });
 
         const cancel = btnRow.createEl('button', { text: t(lang, 'btn_cancel') });
@@ -76,11 +80,18 @@ export class CreateTaskModal extends Modal {
         save.onclick = () => this.submit();
     }
 
+    /* ═══════════════════════════════════════════════════════
+       🔥 در لحظه‌ی submit، مستقیم از DOM می‌خونیم
+       ═══════════════════════════════════════════════════════ */
     private async submit(): Promise<void> {
         if (this.submitting) return;
         const lang = this.plugin.settings.language;
 
-        if (!this.title.trim()) {
+        /* 🆕 خوندن مستقیم از inputEl (نه از state) */
+        const title = (this.titleComponent?.inputEl.value ?? '').trim();
+        const description = (this.descriptionComponent?.inputEl.value ?? '').trim();
+
+        if (!title) {
             this.plugin.toastManager.show(t(lang, 'notice_no_title'), 'warning');
             return;
         }
@@ -88,8 +99,8 @@ export class CreateTaskModal extends Modal {
         this.submitting = true;
 
         const ok = await this.plugin.taskManager.createTask(
-            this.title.trim(),
-            this.description.trim(),
+            title,
+            description,
             this.category
         );
 
@@ -102,7 +113,6 @@ export class CreateTaskModal extends Modal {
             }
         } else {
             this.submitting = false;
-            /* 🔥 پیام ترجمه‌شده */
             this.plugin.toastManager.show(t(lang, 'notice_create_failed'), 'error');
         }
     }
