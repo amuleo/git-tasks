@@ -8,6 +8,7 @@
    ✅ ورودی‌های عددی چپ‌چین در RTL
    ✅ دکمه تست اتصال داینامیک
    ✅ حذف خط زیر عنوان مودال‌ها
+   ✅ بهینه‌سازی dropdown در حالت فارسی
    ════════════════════════════════════════════════════════════ */
 
 /* ═══════════════════════════════════════════════════════════
@@ -63,7 +64,6 @@
     transform: translateY(0);
 }
 
-/* انیمیشن خروج نرم */
 .git-tasks-toast.is-exiting {
     opacity: 0 !important;
     transform: translateY(-12px) scale(0.95) !important;
@@ -300,17 +300,31 @@
     text-align: center;
 }
 
-/* 🆕 حذف خط زیر عنوان مودال (خلوت‌تر) */
-.git-tasks-modal-content h3 {
+/* 🆕 حذف خط زیر عنوان مودال — نسخه قطعی */
+.git-tasks-modal-title,
+.git-tasks-modal-content h3,
+.git-tasks-modal-content .git-tasks-modal-title,
+.modal h3.git-tasks-modal-title {
     border: none !important;
+    border-top: none !important;
     border-bottom: none !important;
+    border-left: none !important;
+    border-right: none !important;
     padding-bottom: 0 !important;
     margin-bottom: 12px !important;
     outline: none !important;
     box-shadow: none !important;
+    background-image: none !important;
+    text-decoration: none !important;
 }
 
-.git-tasks-modal-content h3 + hr {
+.git-tasks-modal-title::after,
+.git-tasks-modal-title::before {
+    display: none !important;
+    content: none !important;
+}
+
+.git-tasks-modal-content hr:first-of-type {
     display: none !important;
 }
 
@@ -402,20 +416,47 @@
     text-align: right;
 }
 
-/* 🆕 ورودی‌های عددی: همیشه چپ‌چین (چون عدد ذاتاً LTR هست) */
+/* 🆕 ورودی‌های عددی: چپ‌چین در RTL */
 .git-tasks-settings[dir="rtl"] input[type="number"],
-.git-tasks-settings[dir="rtl"] input[type="number"][dir="ltr"] {
+.git-tasks-settings[dir="rtl"] input[type="number"][dir="ltr"],
+.git-tasks-settings[dir="rtl"] .setting-item-control input[type="number"],
+.git-tasks-rtl input[type="number"] {
     direction: ltr !important;
     text-align: left !important;
+    unicode-bidi: plaintext !important;
 }
 
-/* ورودی‌های LTR اجباری (توکن، مخزن، شاخه) */
+/* ورودی‌های LTR اجباری */
 .git-tasks-settings input[dir="ltr"] {
     direction: ltr !important;
     text-align: left !important;
 }
 
-/* 🆕 دکمه تست اتصال — رنگ داینامیک بر اساس تم */
+/* ═══════════════════════════════════════════════════════════
+   🆕 بهینه‌سازی dropdown در حالت فارسی
+   ✅ متن چپ‌چین توی خود dropdown (چون گزینه‌ها انگلیسی/فارسی ترکیب شده)
+   ✅ پدینگ مناسب
+   ✅ فلش سمت چپ
+   ═══════════════════════════════════════════════════════════ */
+
+/* dropdown در تنظیمات فارسی */
+.git-tasks-settings[dir="rtl"] select.dropdown {
+    direction: rtl !important;
+    text-align: right !important;
+    padding-right: 10px !important;
+    padding-left: 28px !important;  /* فضا برای فلش */
+    background-position: left 8px center !important;  /* فلش سمت چپ */
+}
+
+/* اگه مقدار داخل dropdown عددی بود، خود متن چپ‌چین بشه */
+.git-tasks-settings[dir="rtl"] select.dropdown option {
+    direction: rtl !important;
+    text-align: right !important;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   🆕 دکمه تست اتصال — رنگ داینامیک بر اساس تم
+   ═══════════════════════════════════════════════════════════ */
 .git-tasks-settings button.mod-cta,
 .git-tasks-settings button.mod-cta:focus {
     background-color: var(--interactive-accent) !important;
@@ -472,13 +513,22 @@
     text-align: right;
 }
 
-/* 🆕 دکمه‌های مودال فارسی: سمت راست (مثل استاندارد iOS) */
+/* دکمه‌های مودال فارسی: سمت راست */
 .git-tasks-modal-content[dir="rtl"] .git-tasks-modal-buttons {
     justify-content: flex-end !important;
 }
 
 .git-tasks-modal-content[dir="rtl"] .checkbox-container {
     transform: scaleX(-1);
+}
+
+/* 🆕 dropdown در مودال فارسی */
+.git-tasks-modal-content[dir="rtl"] select.dropdown {
+    direction: rtl !important;
+    text-align: right !important;
+    padding-right: 10px !important;
+    padding-left: 28px !important;
+    background-position: left 8px center !important;
 }
 
 /* ═══════════════════════════════════════════════════════════
