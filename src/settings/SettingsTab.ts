@@ -1,9 +1,10 @@
 /* ════════════════════════════════════════════════════════════
    ⚙️ تب تنظیمات پلاگین
-   ✅ تعداد تسک با dropdown (۵ تا ۳۰، پیش‌فرض ۱۰)
    ✅ فاصله همگام‌سازی با dropdown
+   ✅ تعداد تسک با dropdown (۵ تا ۳۰، پیش‌فرض ۱۰)
    ✅ دکمه Initialize
    ✅ رفع i18n
+   ✅ بهینه‌سازی refresh (جلوگیری از رفرش‌های پشت سر هم)
    ════════════════════════════════════════════════════════════ */
 
 import { App, PluginSettingTab, Setting, Notice } from 'obsidian';
@@ -19,9 +20,23 @@ export class GitTasksSettingsTab extends PluginSettingTab {
     private testing = false;
     private initializing = false;
 
+    /* 🆕 جلوگیری از رفرش‌های پشت سر هم */
+    private refreshTimer: number | null = null;
+
     constructor(app: App, plugin: GitTasksPlugin) {
         super(app, plugin);
         this.plugin = plugin;
+    }
+
+    /* 🆕 رفرش با تأخیر کوچیک (به جای display فوری) */
+    private scheduleRefresh(): void {
+        if (this.refreshTimer !== null) {
+            window.clearTimeout(this.refreshTimer);
+        }
+        this.refreshTimer = window.setTimeout(() => {
+            this.refreshTimer = null;
+            this.display();
+        }, 50);
     }
 
     display(): void {
@@ -45,7 +60,8 @@ export class GitTasksSettingsTab extends PluginSettingTab {
                 dd.onChange(async (v) => {
                     this.plugin.settings.language = v as Language;
                     await this.plugin.saveSettings();
-                    this.display();
+                    /* 🆕 رفرش با تأخیر */
+                    this.scheduleRefresh();
                 });
             });
 
@@ -104,7 +120,8 @@ export class GitTasksSettingsTab extends PluginSettingTab {
                         this.plugin.settings.branch = found.default_branch || 'main';
                     }
                     await this.plugin.saveSettings();
-                    this.display();
+                    /* 🆕 رفرش با تأخیر */
+                    this.scheduleRefresh();
                 });
             });
 
@@ -127,7 +144,8 @@ export class GitTasksSettingsTab extends PluginSettingTab {
                     .setDisabled(this.initializing || !this.plugin.settings.token || !this.plugin.settings.repo)
                     .onClick(async () => {
                         this.initializing = true;
-                        this.display();
+                        /* 🆕 رفرش با تأخیر */
+                        this.scheduleRefresh();
                         try {
                             const created = await this.plugin.taskManager.ensureRepo();
                             new Notice(t(lang, 'settings_repo_init_ok') + (created.length ? ` (${created.join(', ')})` : ''));
@@ -135,7 +153,8 @@ export class GitTasksSettingsTab extends PluginSettingTab {
                             new Notice(t(lang, 'settings_repo_init_fail', { error: e?.message || 'unknown' }));
                         }
                         this.initializing = false;
-                        this.display();
+                        /* 🆕 رفرش با تأخیر */
+                        this.scheduleRefresh();
                     });
             });
 
@@ -163,14 +182,12 @@ export class GitTasksSettingsTab extends PluginSettingTab {
             .setName(t(lang, 'settings_per_page'))
             .setDesc(t(lang, 'settings_per_page_desc'))
             .addDropdown(dd => {
-                /* مقادیر مجاز: ۵ تا ۳۰ */
                 const options = [5, 10, 15, 20, 25, 30];
 
                 for (const n of options) {
                     dd.addOption(String(n), String(n));
                 }
 
-                /* مقدار فعلی */
                 let current = this.plugin.settings.tasksPerPage;
                 if (!options.includes(current)) {
                     current = 10;
@@ -251,14 +268,16 @@ export class GitTasksSettingsTab extends PluginSettingTab {
             return;
         }
         this.testing = true;
-        this.display();
+        /* 🆕 رفرش با تأخیر */
+        this.scheduleRefresh();
         try {
             const user = await getAuthenticatedUser(this.plugin.settings.token);
             if (!user) {
                 this.connectionOk = false;
                 new Notice(t(lang, 'settings_connection_fail', { error: 'Invalid token' }));
                 this.testing = false;
-                this.display();
+                /* 🆕 رفرش با تأخیر */
+                this.scheduleRefresh();
                 return;
             }
             this.plugin.settings.username = user.login;
@@ -278,6 +297,7 @@ export class GitTasksSettingsTab extends PluginSettingTab {
             new Notice(t(lang, 'settings_connection_fail', { error: e?.message || 'unknown' }));
         }
         this.testing = false;
-        this.display();
+        /* 🆕 رفرش با تأخیر */
+        this.scheduleRefresh();
     }
 }
