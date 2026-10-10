@@ -7,7 +7,7 @@
    ✅ دکمه‌های مودال سمت راست در RTL
    ✅ ورودی‌های عددی چپ‌چین در RTL
    ✅ دکمه تست اتصال داینامیک
-   ✅ حذف خط زیر عنوان مودال‌ها
+   ✅ حذف خط زیر عنوان مودال‌ها (نسخه ultra-strong)
    ✅ بهینه‌سازی dropdown در حالت فارسی
    ════════════════════════════════════════════════════════════ */
 
@@ -300,34 +300,90 @@
     text-align: center;
 }
 
-/* 🆕 حذف خط زیر عنوان مودال — نسخه قطعی */
-.git-tasks-modal-title,
-.git-tasks-modal-content h3,
-.git-tasks-modal-content .git-tasks-modal-title,
-.modal h3.git-tasks-modal-title {
-    border: none !important;
-    border-top: none !important;
-    border-bottom: none !important;
-    border-left: none !important;
-    border-right: none !important;
-    padding-bottom: 0 !important;
-    margin-bottom: 12px !important;
-    outline: none !important;
-    box-shadow: none !important;
+/* ═══════════════════════════════════════════════════════════
+   🆕 حذف خط زیر عنوان مودال — نسخه ultra-strong
+   ═══════════════════════════════════════════════════════════ */
+h3.git-tasks-modal-title,
+.modal h3.git-tasks-modal-title,
+.modal-content h3.git-tasks-modal-title,
+.git-tasks-modal-content h3.git-tasks-modal-title,
+.git-tasks-modal-content h3 {
+    /* حذف تمام border ها */
+    border: 0 !important;
+    border-top: 0 !important;
+    border-bottom: 0 !important;
+    border-left: 0 !important;
+    border-right: 0 !important;
+    border-image: none !important;
+    border-image-source: none !important;
+
+    /* حذف تمام background ها */
+    background: transparent !important;
+    background-color: transparent !important;
     background-image: none !important;
+    background-position: initial !important;
+    background-size: initial !important;
+
+    /* حذف shadow ها */
+    box-shadow: none !important;
+    -webkit-box-shadow: none !important;
+    text-shadow: none !important;
+
+    /* حذف outline */
+    outline: none !important;
+    outline-offset: 0 !important;
+
+    /* تنظیم پدینگ و مارجین */
+    padding: 0 !important;
+    padding-bottom: 0 !important;
+    padding-top: 0 !important;
+    margin-bottom: 12px !important;
+
+    /* حذف decoration */
     text-decoration: none !important;
+    text-decoration-line: none !important;
+
+    /* ثابت */
+    position: static !important;
+    display: block !important;
+    height: auto !important;
+    overflow: visible !important;
 }
 
-.git-tasks-modal-title::after,
-.git-tasks-modal-title::before {
-    display: none !important;
+/* حذف pseudo-elements که ممکنه خط بکشن */
+h3.git-tasks-modal-title::before,
+h3.git-tasks-modal-title::after,
+.git-tasks-modal-content h3::before,
+.git-tasks-modal-content h3::after {
     content: none !important;
+    display: none !important;
+    background: none !important;
+    background-image: none !important;
+    border: none !important;
+    box-shadow: none !important;
+    height: 0 !important;
+    width: 0 !important;
+    position: static !important;
+    margin: 0 !important;
+    padding: 0 !important;
 }
 
-.git-tasks-modal-content hr:first-of-type {
+/* اگه hr هست بین عنوان و محتوا، حذفش کن */
+.git-tasks-modal-content hr {
+    display: none !important;
+    visibility: hidden !important;
+    height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+}
+
+.git-tasks-modal-content > hr,
+.git-tasks-modal-content > div > hr:first-child {
     display: none !important;
 }
 
+/* ───── سایر استایل‌های مودال ───── */
 .git-tasks-details-header {
     display: flex;
     align-items: center;
@@ -434,9 +490,6 @@
 
 /* ═══════════════════════════════════════════════════════════
    🆕 بهینه‌سازی dropdown در حالت فارسی
-   ✅ متن چپ‌چین توی خود dropdown (چون گزینه‌ها انگلیسی/فارسی ترکیب شده)
-   ✅ پدینگ مناسب
-   ✅ فلش سمت چپ
    ═══════════════════════════════════════════════════════════ */
 
 /* dropdown در تنظیمات فارسی */
@@ -444,11 +497,10 @@
     direction: rtl !important;
     text-align: right !important;
     padding-right: 10px !important;
-    padding-left: 28px !important;  /* فضا برای فلش */
-    background-position: left 8px center !important;  /* فلش سمت چپ */
+    padding-left: 28px !important;
+    background-position: left 8px center !important;
 }
 
-/* اگه مقدار داخل dropdown عددی بود، خود متن چپ‌چین بشه */
 .git-tasks-settings[dir="rtl"] select.dropdown option {
     direction: rtl !important;
     text-align: right !important;
