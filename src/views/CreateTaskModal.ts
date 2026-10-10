@@ -1,5 +1,6 @@
 /* ════════════════════════════════════════════════════════════
    ➕ مودال ساخت تسک جدید
+   ✅ مودال قبل از sync بسته می‌شه (sync در پس‌زمینه)
    ════════════════════════════════════════════════════════════ */
 
 import { App, Modal, Setting } from 'obsidian';
@@ -12,6 +13,7 @@ export class CreateTaskModal extends Modal {
     private title = '';
     private description = '';
     private category: string | null = null;
+    private submitting = false;
 
     constructor(app: App, plugin: GitTasksPlugin, onDone: () => void) {
         super(app);
@@ -69,13 +71,20 @@ export class CreateTaskModal extends Modal {
         save.onclick = () => this.submit();
     }
 
+    /* ═══════════════════════════════════════════════════════
+       ارسال تسک
+       ترتیب: toast → close → sync پس‌زمینه
+       ═══════════════════════════════════════════════════════ */
     private async submit(): Promise<void> {
+        if (this.submitting) return;
         const lang = this.plugin.settings.language;
 
         if (!this.title.trim()) {
             this.plugin.toastManager.show(t(lang, 'notice_no_title'), 'warning');
             return;
         }
+
+        this.submitting = true;
 
         const ok = await this.plugin.taskManager.createTask(
             this.title.trim(),
@@ -84,13 +93,19 @@ export class CreateTaskModal extends Modal {
         );
 
         if (ok) {
+            /* ۱. Toast موفقیت */
             this.plugin.toastManager.show(t(lang, 'notice_task_created'), 'success');
-            if (this.plugin.settings.autoSyncAfterEdit) {
-                await this.plugin.taskManager.sync(false);
-            }
+
+            /* ۲. بستن مودال + رفرش پنل */
             this.onDone();
             this.close();
+
+            /* ۳. sync در پس‌زمینه (بدون انتظار) */
+            if (this.plugin.settings.autoSyncAfterEdit) {
+                this.plugin.taskManager.sync(false).catch(() => {});
+            }
         } else {
+            this.submitting = false;
             this.plugin.toastManager.show(
                 t(lang, 'notice_sync_fail', { error: 'create failed' }),
                 'error'
