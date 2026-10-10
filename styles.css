@@ -7,7 +7,6 @@
    ✅ دکمه‌های مودال سمت راست در RTL
    ✅ ورودی‌های عددی چپ‌چین در RTL
    ✅ دکمه تست اتصال داینامیک
-   ✅ حذف خط زیر عنوان مودال‌ها (نسخه ultra-strong)
    ✅ بهینه‌سازی dropdown در حالت فارسی
    ════════════════════════════════════════════════════════════ */
 
@@ -300,97 +299,21 @@
     text-align: center;
 }
 
-/* ═══════════════════════════════════════════════════════════
-   🆕 حذف خط زیر عنوان مودال — نسخه ultra-strong
-   ═══════════════════════════════════════════════════════════ */
-h3.git-tasks-modal-title,
-.modal h3.git-tasks-modal-title,
-.modal-content h3.git-tasks-modal-title,
-.git-tasks-modal-content h3.git-tasks-modal-title,
-.git-tasks-modal-content h3 {
-    /* حذف تمام border ها */
-    border: 0 !important;
-    border-top: 0 !important;
-    border-bottom: 0 !important;
-    border-left: 0 !important;
-    border-right: 0 !important;
-    border-image: none !important;
-    border-image-source: none !important;
-
-    /* حذف تمام background ها */
-    background: transparent !important;
-    background-color: transparent !important;
-    background-image: none !important;
-    background-position: initial !important;
-    background-size: initial !important;
-
-    /* حذف shadow ها */
-    box-shadow: none !important;
-    -webkit-box-shadow: none !important;
-    text-shadow: none !important;
-
-    /* حذف outline */
-    outline: none !important;
-    outline-offset: 0 !important;
-
-    /* تنظیم پدینگ و مارجین */
-    padding: 0 !important;
-    padding-bottom: 0 !important;
-    padding-top: 0 !important;
-    margin-bottom: 12px !important;
-
-    /* حذف decoration */
-    text-decoration: none !important;
-    text-decoration-line: none !important;
-
-    /* ثابت */
-    position: static !important;
-    display: block !important;
-    height: auto !important;
-    overflow: visible !important;
-}
-
-/* حذف pseudo-elements که ممکنه خط بکشن */
-h3.git-tasks-modal-title::before,
-h3.git-tasks-modal-title::after,
-.git-tasks-modal-content h3::before,
-.git-tasks-modal-content h3::after {
-    content: none !important;
-    display: none !important;
-    background: none !important;
-    background-image: none !important;
-    border: none !important;
-    box-shadow: none !important;
-    height: 0 !important;
-    width: 0 !important;
-    position: static !important;
-    margin: 0 !important;
-    padding: 0 !important;
-}
-
-/* اگه hr هست بین عنوان و محتوا، حذفش کن */
-.git-tasks-modal-content hr {
-    display: none !important;
-    visibility: hidden !important;
-    height: 0 !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    border: 0 !important;
-}
-
-.git-tasks-modal-content > hr,
-.git-tasks-modal-content > div > hr:first-child {
-    display: none !important;
-}
-
-/* ───── سایر استایل‌های مودال ───── */
+/* ───── جزئیات مودال ───── */
 .git-tasks-details-header {
     display: flex;
-    align-items: center;
-    justify-content: space-between;
+    flex-direction: column;
     gap: 8px;
+    margin-bottom: 12px;
 }
-.git-tasks-details-header h3 { margin: 0; }
+
+.git-tasks-details-title-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
 .git-tasks-pinned-badge {
     font-size: var(--font-ui-smaller);
     color: var(--text-accent);
@@ -420,7 +343,7 @@ h3.git-tasks-modal-title::after,
 }
 
 .git-tasks-details-title {
-    margin: 8px 0 12px 0;
+    margin: 0;
     font-size: var(--font-ui-large);
     line-height: 1.4;
 }
@@ -435,6 +358,10 @@ h3.git-tasks-modal-title::after,
     background: var(--background-secondary);
     border-radius: 6px;
 }
+.git-tasks-details-section h5 {
+    margin-top: 0;
+    margin-bottom: 8px;
+}
 .git-tasks-details-desc {
     padding: 10px 12px;
     background: var(--background-secondary);
@@ -446,7 +373,7 @@ h3.git-tasks-modal-title::after,
 }
 
 /* ═══════════════════════════════════════════════════════════
-   ⚙️ تنظیمات — RTL ساده و ایمن
+   ⚙️ تنظیمات — RTL
    ═══════════════════════════════════════════════════════════ */
 
 .git-tasks-settings[dir="rtl"] {
@@ -472,7 +399,7 @@ h3.git-tasks-modal-title::after,
     text-align: right;
 }
 
-/* 🆕 ورودی‌های عددی: چپ‌چین در RTL */
+/* ورودی‌های عددی: چپ‌چین در RTL */
 .git-tasks-settings[dir="rtl"] input[type="number"],
 .git-tasks-settings[dir="rtl"] input[type="number"][dir="ltr"],
 .git-tasks-settings[dir="rtl"] .setting-item-control input[type="number"],
@@ -488,11 +415,7 @@ h3.git-tasks-modal-title::after,
     text-align: left !important;
 }
 
-/* ═══════════════════════════════════════════════════════════
-   🆕 بهینه‌سازی dropdown در حالت فارسی
-   ═══════════════════════════════════════════════════════════ */
-
-/* dropdown در تنظیمات فارسی */
+/* ───── بهینه‌سازی dropdown در حالت فارسی ───── */
 .git-tasks-settings[dir="rtl"] select.dropdown {
     direction: rtl !important;
     text-align: right !important;
@@ -506,9 +429,7 @@ h3.git-tasks-modal-title::after,
     text-align: right !important;
 }
 
-/* ═══════════════════════════════════════════════════════════
-   🆕 دکمه تست اتصال — رنگ داینامیک بر اساس تم
-   ═══════════════════════════════════════════════════════════ */
+/* ───── دکمه تست اتصال ───── */
 .git-tasks-settings button.mod-cta,
 .git-tasks-settings button.mod-cta:focus {
     background-color: var(--interactive-accent) !important;
@@ -526,9 +447,7 @@ h3.git-tasks-modal-title::after,
     cursor: not-allowed !important;
 }
 
-/* ═══════════════════════════════════════════════════════════
-   📌 عنوان‌ها در تنظیمات: بدون اوت‌لاین، فقط خط زیرین
-   ═══════════════════════════════════════════════════════════ */
+/* ───── عنوان‌های تنظیمات: خط زیرین نازک ───── */
 .git-tasks-settings .setting-item-heading,
 .git-tasks-settings .setting-item-heading .setting-item-info,
 .git-tasks-settings .setting-item-heading .setting-item-name {
@@ -574,7 +493,7 @@ h3.git-tasks-modal-title::after,
     transform: scaleX(-1);
 }
 
-/* 🆕 dropdown در مودال فارسی */
+/* dropdown در مودال فارسی */
 .git-tasks-modal-content[dir="rtl"] select.dropdown {
     direction: rtl !important;
     text-align: right !important;
