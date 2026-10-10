@@ -1,5 +1,7 @@
 /* ════════════════════════════════════════════════════════════
    🚀 نقطه ورود پلاگین
+   ✅ رفع خطای view.refresh
+   ✅ بهینه‌سازی refreshPanel
    ════════════════════════════════════════════════════════════ */
 
 import { Plugin, WorkspaceLeaf } from 'obsidian';
@@ -14,7 +16,7 @@ import { ToastManager } from './managers/ToastManager';
 export default class GitTasksPlugin extends Plugin {
     settings: GitTasksSettings;
     taskManager: TaskManager;
-    toastManager: ToastManager;   // 🆕
+    toastManager: ToastManager;
     private gitManager: GitManager;
     private cacheManager: CacheManager;
     private syncIntervalId: number | null = null;
@@ -22,7 +24,6 @@ export default class GitTasksPlugin extends Plugin {
     async onload(): Promise<void> {
         await this.loadSettings();
 
-        /* Toast Manager (اول از همه) */
         this.toastManager = new ToastManager();
         this.toastManager.setRTL(this.settings.language === 'fa');
 
@@ -51,7 +52,6 @@ export default class GitTasksPlugin extends Plugin {
 
     async onunload(): Promise<void> {
         this.stopAutoSync();
-        /* 🆕 پاک کردن Toast container */
         if (this.toastManager) this.toastManager.destroy();
     }
 
@@ -80,7 +80,6 @@ export default class GitTasksPlugin extends Plugin {
             id: 'sync-tasks',
             name: 'Sync tasks with GitHub',
             callback: async () => {
-                const lang = this.settings.language;
                 await this.taskManager.sync(true, (msg, type) =>
                     this.toastManager.show(msg, type)
                 );
@@ -106,11 +105,26 @@ export default class GitTasksPlugin extends Plugin {
         if (leaf) workspace.revealLeaf(leaf);
     }
 
+    /* ═══════════════════════════════════════════════════════
+       🆕 refreshPanel امن (بدون خطای view.refresh)
+       ═══════════════════════════════════════════════════════ */
     refreshPanel(): void {
         const leaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_GIT_TASKS);
         for (const leaf of leaves) {
-            const view = leaf.view as TaskPanelView;
-            view.refresh();
+            const view = leaf.view;
+            /* 🔥 چک کن که view معتبر هست و متد refresh داره */
+            if (
+                view &&
+                typeof (view as any).refresh === 'function' &&
+                view.getViewType?.() === VIEW_TYPE_GIT_TASKS
+            ) {
+                try {
+                    (view as TaskPanelView).refresh();
+                } catch (e) {
+                    /* بی‌صدا نادیده بگیر */
+                    console.warn('[Git Tasks] Panel refresh failed:', e);
+                }
+            }
         }
     }
 
@@ -134,7 +148,6 @@ export default class GitTasksPlugin extends Plugin {
             this.settings.repo
         ) {
             const intervalMs = Math.round(minutes * 60 * 1000);
-            /* حداقل ۵ ثانیه */
             const safeInterval = Math.max(5000, intervalMs);
 
             this.syncIntervalId = window.setInterval(async () => {
