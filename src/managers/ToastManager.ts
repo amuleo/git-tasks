@@ -2,7 +2,7 @@
    🍞 Toast Manager — نمایش سریالی (یکی یکی)
    ✅ بالای صفحه (شبیه اعلان‌های پیش‌فرض آبسیدین)
    ✅ یکی یکی نمایش داده می‌شن (نه پشت سر هم)
-   ✅ صف داخلی برای مدیریت
+   ✅ انیمیشن خروج نرم هنگام کلیک (fade-out)
    ════════════════════════════════════════════════════════════ */
 
 export type ToastType = 'info' | 'success' | 'error' | 'warning';
@@ -14,12 +14,16 @@ interface ToastItem {
     duration: number;
 }
 
+/* مدت زمان انیمیشن خروج (باید با CSS هماهنگ باشه) */
+const EXIT_ANIMATION_MS = 250;
+
 export class ToastManager {
     private container: HTMLElement;
     private queue: ToastItem[] = [];
     private current: ToastItem | null = null;
     private currentEl: HTMLElement | null = null;
     private currentTimeout: number | null = null;
+    private isExiting = false;
     private nextId = 1;
 
     constructor() {
@@ -42,7 +46,7 @@ export class ToastManager {
         this.queue.push(item);
 
         /* اگه هیچی نمایش داده نمی‌شه، فوری نشون بده */
-        if (!this.current) {
+        if (!this.current && !this.isExiting) {
             this.showNext();
         }
     }
@@ -56,6 +60,7 @@ export class ToastManager {
         this.queue = [];
         this.current = null;
         this.currentEl = null;
+        this.isExiting = false;
         this.container.empty();
     }
 
@@ -71,11 +76,13 @@ export class ToastManager {
         if (this.queue.length === 0) {
             this.current = null;
             this.currentEl = null;
+            this.isExiting = false;
             return;
         }
 
         const item = this.queue.shift()!;
         this.current = item;
+        this.isExiting = false;
 
         /* ساخت المان */
         this.container.empty();
@@ -89,30 +96,44 @@ export class ToastManager {
         /* انیمیشن ورود */
         requestAnimationFrame(() => el.addClass('is-visible'));
 
-        /* کلیک = حذف فوری */
+        /* کلیک = خروج نرم + رفتن به بعدی */
         el.onclick = () => {
-            if (this.currentTimeout) {
-                window.clearTimeout(this.currentTimeout);
-                this.currentTimeout = null;
-            }
-            this.current = null;
-            this.currentEl = null;
-            this.showNext();
+            this.exitCurrent();
         };
 
-        /* زمان‌بندی برای آیتم بعدی */
+        /* زمان‌بندی خودکار */
         this.currentTimeout = window.setTimeout(() => {
             this.currentTimeout = null;
-            /* انیمیشن خروج */
-            if (this.currentEl) {
-                this.currentEl.removeClass('is-visible');
-            }
-            /* بعد از انیمیشن، بعدی رو نشون بده */
-            window.setTimeout(() => {
-                this.current = null;
-                this.currentEl = null;
-                this.showNext();
-            }, 200);
+            this.exitCurrent();
         }, item.duration);
+    }
+
+    /* ═══════════════════════════════════════════════════════
+       خروج نرم با انیمیشن (fade-out)
+       ═══════════════════════════════════════════════════════ */
+    private exitCurrent(): void {
+        /* جلوگیری از دوبار اجرا */
+        if (this.isExiting || !this.currentEl) return;
+        this.isExiting = true;
+
+        /* پاک کردن تایمر */
+        if (this.currentTimeout) {
+            window.clearTimeout(this.currentTimeout);
+            this.currentTimeout = null;
+        }
+
+        const el = this.currentEl;
+
+        /* کلاس خروج (CSS انیمیشن fade-out رو اجرا می‌کنه) */
+        el.removeClass('is-visible');
+        el.addClass('is-exiting');
+
+        /* بعد از انیمیشن خروج، بعدی رو نشون بده */
+        window.setTimeout(() => {
+            this.current = null;
+            this.currentEl = null;
+            this.isExiting = false;
+            this.showNext();
+        }, EXIT_ANIMATION_MS);
     }
 }
