@@ -1,15 +1,19 @@
 /* ════════════════════════════════════════════════════════════
    🐙 Git Manager — با Action Queue برای جلوگیری از race condition
    ✅ رفع باگ: خواندن description از body
+   ⚡ بهینه‌سازی: concurrency بالاتر + مدیریت کش ETag
    ════════════════════════════════════════════════════════════ */
 
 import type { GitTasksSettings, Task, Category, CategoryFile, IndexFile, CompletedStats } from '../types';
-import { getFile, putFile, getTree } from '../utils/github';
+import { getFile, putFile, getTree, clearETagCache } from '../utils/github';
 import { getJalaliString, getGregorianString } from '../utils/jalaliDate';
 
 const CATEGORIES_PATH = '_categories.json';
 const INDEX_PATH = '_index.json';
 const TASKS_DIR = 'tasks';
+
+/* ⚡ تعداد درخواست‌های همزمان (به جای ۱۰) */
+const CONCURRENCY = 15;
 
 const DEFAULT_CATEGORIES: CategoryFile = {
     version: 1,
@@ -130,7 +134,8 @@ export class GitManager {
             });
 
         const tasks: Task[] = [];
-        const chunks = this.chunk(taskFolders, 10);
+        /* ⚡ ۱۵ درخواست همزمان (به جای ۱۰) برای سرعت بیشتر */
+        const chunks = this.chunk(taskFolders, CONCURRENCY);
         for (const chunk of chunks) {
             const results = await Promise.all(chunk.map((f: any) => this.readTask(f.path)));
             for (const t of results) if (t) tasks.push(t);
@@ -159,7 +164,7 @@ export class GitManager {
         if (!file) return null;
 
         const meta = this.parseFrontmatter(file.content);
-        /* 🔥 NEW: محتوای body رو هم می‌خونیم (توضیحات) */
+        /* 🔥 محتوای body رو هم می‌خونیم (توضیحات) */
         const body = this.extractBody(file.content);
         const id = folderPath.split('/').pop() || '';
 
@@ -285,6 +290,14 @@ export class GitManager {
         });
     }
 
+    /* ═══════════════════════════════════════════════════
+       🆕 پاک کردن کش ETag
+       (مثلاً وقتی توکن یا مخزن تغییر می‌کنه)
+       ═══════════════════════════════════════════════════ */
+    clearCache(): void {
+        clearETagCache();
+    }
+
     /* ───── ابزار ───── */
     private buildReadme(t: Task): string {
         return [
@@ -322,7 +335,7 @@ export class GitManager {
         return out;
     }
 
-    /* 🔥 NEW: استخراج محتوای body (بعد از frontmatter) */
+    /* 🔥 استخراج محتوای body (بعد از frontmatter) */
     private extractBody(content: string): string {
         const match = content.match(/^---\n[\s\S]*?\n---\n?([\s\S]*)$/);
         return match ? match[1].trim() : '';
