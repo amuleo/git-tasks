@@ -2,6 +2,7 @@
    🔎 مودال جزئیات تسک
    🔥 رفع باگ: خوندن مستقیم از inputEl.value هنگام ذخیره
    ✅ پین فقط برای تسک‌های در انتظار
+   ✅ کلاس اختصاصی برای عنوان مودال
    ════════════════════════════════════════════════════════════ */
 
 import { App, Modal } from 'obsidian';
@@ -19,7 +20,7 @@ export class TaskDetailsModal extends Modal {
     private editCategory: string | null = null;
     private busy = false;
 
-    /* 🆕 رفرنس به input های ویرایش */
+    /* رفرنس به input های ویرایش */
     private titleInputEl: HTMLInputElement | null = null;
     private descInputEl: HTMLTextAreaElement | null = null;
 
@@ -48,7 +49,11 @@ export class TaskDetailsModal extends Modal {
         const lang = this.plugin.settings.language;
 
         const header = parent.createDiv({ cls: 'git-tasks-details-header' });
-        header.createEl('h3', { text: t(lang, 'details_title') });
+        /* 🆕 عنوان با کلاس اختصاصی */
+        header.createEl('h3', {
+            text: t(lang, 'details_title'),
+            cls: 'git-tasks-modal-title',
+        });
         if (this.task.pinned && !this.task.completed) {
             header.createSpan({
                 cls: 'git-tasks-pinned-badge',
@@ -121,20 +126,24 @@ export class TaskDetailsModal extends Modal {
 
     private renderEditMode(parent: HTMLElement): void {
         const lang = this.plugin.settings.language;
-        parent.createEl('h3', { text: t(lang, 'edit_title') });
+        /* 🆕 عنوان با کلاس اختصاصی */
+        parent.createEl('h3', {
+            text: t(lang, 'edit_title'),
+            cls: 'git-tasks-modal-title',
+        });
 
         /* عنوان */
         parent.createEl('label', { text: t(lang, 'field_title') });
         const titleInput = parent.createEl('input', { type: 'text', cls: 'git-tasks-input' });
         titleInput.value = this.task.title;
-        this.titleInputEl = titleInput;  /* 🆕 رفرنس */
+        this.titleInputEl = titleInput;
 
         /* توضیحات */
         parent.createEl('label', { text: t(lang, 'field_description') });
         const descInput = parent.createEl('textarea', { cls: 'git-tasks-textarea' });
         descInput.rows = 5;
         descInput.value = this.task.description || '';
-        this.descInputEl = descInput;  /* 🆕 رفرنس */
+        this.descInputEl = descInput;
 
         /* دسته‌بندی */
         parent.createEl('label', { text: t(lang, 'field_category') });
@@ -209,14 +218,10 @@ export class TaskDetailsModal extends Modal {
         }
     }
 
-    /* ═══════════════════════════════════════════════════════
-       🔥 ذخیره ویرایش: خوندن مستقیم از inputEl.value
-       ═══════════════════════════════════════════════════════ */
     private async handleSave(): Promise<void> {
         if (this.busy) return;
         const lang = this.plugin.settings.language;
 
-        /* 🆕 خوندن مستقیم از DOM */
         const title = (this.titleInputEl?.value ?? '').trim();
         const description = (this.descInputEl?.value ?? '').trim();
 
