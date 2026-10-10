@@ -2,6 +2,7 @@
    ➕ مودال ساخت تسک جدید
    🔥 رفع باگ: خوندن مستقیم از inputEl.value در لحظه submit
       (چون onChange در Obsidian API فوری نیست)
+   ✅ کلاس اختصاصی برای عنوان مودال
    ════════════════════════════════════════════════════════════ */
 
 import { App, Modal, Setting, TextComponent, TextAreaComponent } from 'obsidian';
@@ -14,7 +15,7 @@ export class CreateTaskModal extends Modal {
     private category: string | null = null;
     private submitting = false;
 
-    /* 🆕 نگه‌داری رفرنس به کامپوننت‌ها */
+    /* رفرنس به کامپوننت‌ها */
     private titleComponent: TextComponent | null = null;
     private descriptionComponent: TextAreaComponent | null = null;
 
@@ -32,7 +33,11 @@ export class CreateTaskModal extends Modal {
         const lang = this.plugin.settings.language;
         applyDirection(contentEl, lang);
 
-        contentEl.createEl('h3', { text: t(lang, 'create_title') });
+        /* 🆕 عنوان با کلاس اختصاصی */
+        contentEl.createEl('h3', {
+            text: t(lang, 'create_title'),
+            cls: 'git-tasks-modal-title',
+        });
 
         /* عنوان */
         new Setting(contentEl)
@@ -87,7 +92,6 @@ export class CreateTaskModal extends Modal {
         if (this.submitting) return;
         const lang = this.plugin.settings.language;
 
-        /* 🆕 خوندن مستقیم از inputEl (نه از state) */
         const title = (this.titleComponent?.inputEl.value ?? '').trim();
         const description = (this.descriptionComponent?.inputEl.value ?? '').trim();
 
