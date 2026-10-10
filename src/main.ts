@@ -17,8 +17,11 @@ export default class GitTasksPlugin extends Plugin {
     private cacheManager: CacheManager;
     private syncIntervalId: number | null = null;
 
+    /* ═══════════════════════════════════════════════════
+       🚀 لود پلاگین
+       ═══════════════════════════════════════════════════ */
     async onload(): Promise<void> {
-        /* لود تنظیمات */
+        /* لود تنظیمات از data.json */
         await this.loadSettings();
 
         /* ساخت مدیرها */
@@ -30,16 +33,16 @@ export default class GitTasksPlugin extends Plugin {
             () => this.settings
         );
 
-        /* لود اولیه از کش */
+        /* لود اولیه از کش محلی (برای نمایش سریع) */
         await this.taskManager.loadFromCache();
 
-        /* ثبت View */
+        /* ثبت پنل تسک‌ها */
         this.registerView(
             VIEW_TYPE_GIT_TASKS,
             (leaf) => new TaskPanelView(leaf, this)
         );
 
-        /* آیکون Ribbon */
+        /* آیکون Ribbon (نوار کناری) */
         this.addRibbonIcon('check-square', 'Git Tasks', () => {
             this.activateView();
         });
@@ -47,13 +50,32 @@ export default class GitTasksPlugin extends Plugin {
         /* تب تنظیمات */
         this.addSettingTab(new GitTasksSettingsTab(this.app, this));
 
-        /* کامندها (فقط ۳ تا، بدون کامند پویا) */
+        /* ثبت کامندها */
+        this.registerCommands();
+
+        /* شروع سینک خودکار زمان‌دار (اگه فعال باشه) */
+        this.restartAutoSync();
+    }
+
+    /* ═══════════════════════════════════════════════════
+       🧹 پاک‌سازی موقع بسته شدن پلاگین
+       ═══════════════════════════════════════════════════ */
+    async onunload(): Promise<void> {
+        this.stopAutoSync();
+    }
+
+    /* ═══════════════════════════════════════════════════
+       📋 ثبت کامندها (فقط ۳ تا، ساده و کاربردی)
+       ═══════════════════════════════════════════════════ */
+    private registerCommands(): void {
+        /* کامند ۱: باز کردن پنل */
         this.addCommand({
             id: 'open-panel',
             name: 'Open task panel',
             callback: () => this.activateView(),
         });
 
+        /* کامند ۲: ساخت تسک جدید */
         this.addCommand({
             id: 'new-task',
             name: 'Create new task',
@@ -69,6 +91,7 @@ export default class GitTasksPlugin extends Plugin {
             },
         });
 
+        /* کامند ۳: سینک دستی */
         this.addCommand({
             id: 'sync-tasks',
             name: 'Sync tasks with GitHub',
@@ -77,20 +100,11 @@ export default class GitTasksPlugin extends Plugin {
                 this.refreshPanel();
             },
         });
-
-        /* شروع سینک خودکار زمان‌دار (اگه فعال باشه) */
-        this.restartAutoSync();
     }
 
-    async onunload(): Promise<void> {
-        /* پاک کردن اینتروال */
-        if (this.syncIntervalId) {
-            window.clearInterval(this.syncIntervalId);
-            this.syncIntervalId = null;
-        }
-    }
-
-    /* ───── فعال‌سازی پنل ───── */
+    /* ═══════════════════════════════════════════════════
+       📂 باز کردن / ساخت پنل
+       ═══════════════════════════════════════════════════ */
     async activateView(): Promise<void> {
         const { workspace } = this.app;
 
@@ -98,8 +112,10 @@ export default class GitTasksPlugin extends Plugin {
         const leaves = workspace.getLeavesOfType(VIEW_TYPE_GIT_TASKS);
 
         if (leaves.length > 0) {
+            /* اگه پنل بازه، همون رو فعال کن */
             leaf = leaves[0];
         } else {
+            /* وگرنه یه پنل جدید بساز */
             leaf = workspace.getRightLeaf(false);
             await leaf?.setViewState({
                 type: VIEW_TYPE_GIT_TASKS,
@@ -110,7 +126,9 @@ export default class GitTasksPlugin extends Plugin {
         if (leaf) workspace.revealLeaf(leaf);
     }
 
-    /* ───── رفرش پنل ───── */
+    /* ═══════════════════════════════════════════════════
+       🔄 رفرش پنل (اگه باز باشه)
+       ═══════════════════════════════════════════════════ */
     refreshPanel(): void {
         const leaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_GIT_TASKS);
         for (const leaf of leaves) {
@@ -119,7 +137,9 @@ export default class GitTasksPlugin extends Plugin {
         }
     }
 
-    /* ───── ذخیره و لود تنظیمات ───── */
+    /* ═══════════════════════════════════════════════════
+       💾 ذخیره و لود تنظیمات
+       ═══════════════════════════════════════════════════ */
     async loadSettings(): Promise<void> {
         this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
     }
@@ -128,21 +148,44 @@ export default class GitTasksPlugin extends Plugin {
         await this.saveData(this.settings);
     }
 
-    /* ───── مدیریت اینتروال سینک خودکار ───── */
+    /* ═══════════════════════════════════════════════════
+       ⏱️ مدیریت سینک خودکار زمان‌دار
+       پشتیبانی از اعشار: 0.5 = ۳۰ ثانیه
+       ═══════════════════════════════════════════════════ */
     restartAutoSync(): void {
         /* پاک کردن اینتروال قبلی */
-        if (this.syncIntervalId !== null) {
-            window.clearInterval(this.syncIntervalId);
-            this.syncIntervalId = null;
-        }
+        this.stopAutoSync();
 
         /* اگه مقدار بازه بیشتر از ۰ بود، یه اینتروال جدید بساز */
         const minutes = this.settings.autoSyncInterval;
-        if (minutes > 0 && this.settings.token && this.settings.repo) {
+
+        /* اعتبارسنجی: باید عدد باشه، بیشتر از ۰، و توکن/مخزن موجود باشه */
+        if (
+            typeof minutes === 'number' &&
+            !isNaN(minutes) &&
+            minutes > 0 &&
+            this.settings.token &&
+            this.settings.repo
+        ) {
+            /* تبدیل دقیقه به میلی‌ثانیه - پشتیبانی از اعشار */
+            /* مثال: 0.5 دقیقه × 60 × 1000 = 30000ms = ۳۰ ثانیه */
+            const intervalMs = Math.round(minutes * 60 * 1000);
+
+            /* حداقل بازه: ۵ ثانیه (برای جلوگیری از Rate Limit گیت‌هاب) */
+            const safeInterval = Math.max(5000, intervalMs);
+
             this.syncIntervalId = window.setInterval(async () => {
                 await this.taskManager.sync(false);
                 this.refreshPanel();
-            }, minutes * 60 * 1000);
+            }, safeInterval);
+        }
+    }
+
+    /* ───── توقف اینتروال (بدون حذف از حافظه) ───── */
+    private stopAutoSync(): void {
+        if (this.syncIntervalId !== null) {
+            window.clearInterval(this.syncIntervalId);
+            this.syncIntervalId = null;
         }
     }
 }
