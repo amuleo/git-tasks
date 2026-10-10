@@ -1,12 +1,10 @@
 /* ════════════════════════════════════════════════════════════
-   📋 منطق تسک‌ها + آمار + پین
+   📋 Task Manager — با رفع باگ پین و مرتب‌سازی داینامیک
    ════════════════════════════════════════════════════════════ */
 
-import { Notice } from 'obsidian';
 import type { Task, Category, GitTasksSettings, Language, CompletedStats } from '../types';
 import { GitManager } from './GitManager';
 import { CacheManager } from './CacheManager';
-import { t } from '../i18n';
 
 export class TaskManager {
     private tasks: Task[] = [];
@@ -32,21 +30,20 @@ export class TaskManager {
         if (cached) {
             this.tasks = cached.tasks;
             this.categories = cached.categories;
+            this.git.sortTasksArray(this.tasks);
             this.recomputeStats();
         }
     }
 
-    /* ───── اطمینان از فایل‌های مخزن ───── */
     async ensureRepo(): Promise<string[]> {
         const res = await this.git.ensureRepoFiles();
         return res.created;
     }
 
-    /* ───── سینک با گیت‌هاب ───── */
-    async sync(showNotice = false): Promise<boolean> {
+    /* ───── سینک ───── */
+    async sync(showToast = false, toast?: (t: string, type?: any) => void): Promise<boolean> {
         if (!this.s.token || !this.s.username || !this.s.repo) return false;
         try {
-            /* اول مطمئن شو فایل‌های ضروری هستن */
             await this.git.ensureRepoFiles();
 
             const [tasks, categories] = await Promise.all([
@@ -57,26 +54,23 @@ export class TaskManager {
             this.categories = categories;
             this.lastSyncTs = Date.now();
 
-            /* محاسبه و ذخیره آمار در index.json */
             this.recomputeStats();
             await this.git.saveIndex(this.stats);
-
-            /* ذخیره در کش */
             await this.cache.save(tasks, categories);
 
-            if (showNotice) new Notice(t(this.lang, 'notice_sync_ok'));
+            if (showToast && toast) {
+                toast('Tasks synced', 'success');
+            }
             return true;
         } catch (e: any) {
-            if (showNotice) {
-                new Notice(t(this.lang, 'notice_sync_fail', { error: e?.message || 'unknown' }));
+            if (showToast && toast) {
+                toast(`Sync failed: ${e?.message || 'unknown'}`, 'error');
             }
             return false;
         }
     }
 
-    /* ═══════════════════════════════════════════════════
-       📊 محاسبه‌ی آمار (برای index.json)
-       ═══════════════════════════════════════════════════ */
+    /* ───── محاسبه‌ی آمار ───── */
     private recomputeStats(): void {
         const now = Date.now();
         const todayStart = this.getDayStart(now);
@@ -84,7 +78,6 @@ export class TaskManager {
         const weekStart = todayStart - 6 * 86400000;
         const yearStart = this.getYearStart(now);
 
-        /* شروع ماه گذشته */
         const d = new Date(now);
         d.setMonth(d.getMonth() - 1, 1);
         d.setHours(0, 0, 0, 0);
@@ -137,18 +130,22 @@ export class TaskManager {
     getCategories(): Category[] { return this.categories; }
     getStats(): CompletedStats { return this.stats; }
 
-    getCategoryName(id: string | null): string {
-        if (!id) return t(this.lang, 'panel_no_category');
+    getCategoryName(id: string | null, noCategoryText: string): string {
+        if (!id) return noCategoryText;
         const cat = this.categories.find(c => c.id === id);
         if (!cat) return id;
         return this.lang === 'fa' && cat.name_fa ? cat.name_fa : cat.name;
     }
 
-    /* ───── عملیات ───── */
+    /* ═══════════════════════════════════════════════════
+       عملیات (همه بعد از موفقیت، لیست رو مرتب می‌کنن)
+       ═══════════════════════════════════════════════════ */
+
     async createTask(title: string, description: string, category: string | null): Promise<boolean> {
         const task = await this.git.createTask(title, description, category);
         if (!task) return false;
         this.tasks.unshift(task);
+        this.git.sortTasksArray(this.tasks);
         await this.cache.save(this.tasks, this.categories);
         return true;
     }
@@ -160,8 +157,10 @@ export class TaskManager {
         if (idx >= 0) {
             this.tasks[idx].completed = true;
             this.tasks[idx].completed_ts = Date.now();
+            /* همگام با آبجکت ورودی */
+            task.completed = true;
+            task.completed_ts = this.tasks[idx].completed_ts;
         }
-        /* آپدیت آمار */
         this.recomputeStats();
         await this.git.saveIndex(this.stats);
         await this.cache.save(this.tasks, this.categories);
@@ -175,6 +174,8 @@ export class TaskManager {
         if (idx >= 0) {
             this.tasks[idx].completed = false;
             this.tasks[idx].completed_ts = 0;
+            task.completed = false;
+            task.completed_ts = 0;
         }
         this.recomputeStats();
         await this.git.saveIndex(this.stats);
@@ -186,7 +187,12 @@ export class TaskManager {
         const ok = await this.git.updateTask(task, patch);
         if (!ok) return false;
         const idx = this.tasks.findIndex(t => t.id === task.id);
-        if (idx >= 0) this.tasks[idx] = { ...this.tasks[idx], ...patch };
+        if (idx >= 0) {
+            this.tasks[idx] = { ...this.tasks[idx], ...patch };
+            /* همگام با آبجکت ورودی */
+            Object.assign(task, patch);
+        }
+        this.git.sortTasksArray(this.tasks);
         await this.cache.save(this.tasks, this.categories);
         return true;
     }
@@ -195,22 +201,38 @@ export class TaskManager {
         const ok = await this.git.updateTask(task, { deleted: true });
         if (!ok) return false;
         const idx = this.tasks.findIndex(t => t.id === task.id);
-        if (idx >= 0) this.tasks[idx].deleted = true;
+        if (idx >= 0) {
+            this.tasks[idx].deleted = true;
+            task.deleted = true;
+        }
         this.recomputeStats();
         await this.git.saveIndex(this.stats);
         await this.cache.save(this.tasks, this.categories);
         return true;
     }
 
-    /* 🆕 پین / آنپین */
-    async togglePin(task: Task): Promise<boolean> {
+    /* ═══════════════════════════════════════════════════
+       🔥 پین / آنپین (اصلاح‌شده)
+       بعد از موفقیت:
+       1. وضعیت تسک آپدیت می‌شه (both in array and ref)
+       2. لیست مرتب می‌شه
+       3. مقدار جدید برگردونده می‌شه
+       ═══════════════════════════════════════════════════ */
+    async togglePin(task: Task): Promise<{ ok: boolean; pinned: boolean }> {
         const newVal = !task.pinned;
         const ok = await this.git.updateTask(task, { pinned: newVal });
-        if (!ok) return false;
+        if (!ok) return { ok: false, pinned: task.pinned };
+
         const idx = this.tasks.findIndex(t => t.id === task.id);
-        if (idx >= 0) this.tasks[idx].pinned = newVal;
+        if (idx >= 0) {
+            this.tasks[idx].pinned = newVal;
+            /* همگام با آبجکت ورودی */
+            task.pinned = newVal;
+        }
+        /* مرتب‌سازی داینامیک برای جابجایی پین‌شده به بالا */
+        this.git.sortTasksArray(this.tasks);
         await this.cache.save(this.tasks, this.categories);
-        return true;
+        return { ok: true, pinned: newVal };
     }
 
     getLastSyncTs(): number { return this.lastSyncTs; }
