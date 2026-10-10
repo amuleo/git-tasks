@@ -1,5 +1,6 @@
 /* ════════════════════════════════════════════════════════════
-   🚀 نقطه ورود پلاگین
+   🚀 نقطه ورود پلاگین Git Tasks
+   ✅ رفع خطای ENOENT (data.json و cache.json)
    ✅ رفع خطای view.refresh
    ════════════════════════════════════════════════════════════ */
 
@@ -34,7 +35,13 @@ export default class GitTasksPlugin extends Plugin {
             () => this.settings
         );
 
-        await this.taskManager.loadFromCache();
+        /* 🆕 لود از کش با محافظت از خطا */
+        try {
+            await this.taskManager.loadFromCache();
+        } catch (e) {
+            /* اگه cache.json وجود نداشت یا خراب بود، بی‌صدا رد شو */
+            console.debug('[Git Tasks] No cache yet, skipping');
+        }
 
         this.registerView(
             VIEW_TYPE_GIT_TASKS,
@@ -105,7 +112,7 @@ export default class GitTasksPlugin extends Plugin {
     }
 
     /* ═══════════════════════════════════════════════════════
-       🆕 refreshPanel امن (بدون خطای view.refresh)
+       refreshPanel امن (بدون خطای view.refresh)
        ═══════════════════════════════════════════════════════ */
     refreshPanel(): void {
         const leaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_GIT_TASKS);
@@ -125,12 +132,27 @@ export default class GitTasksPlugin extends Plugin {
         }
     }
 
+    /* ═══════════════════════════════════════════════════════
+       🆕 loadSettings با محافظت از ENOENT
+       data.json توی اولین اجرا وجود نداره، این طبیعیه
+       ═══════════════════════════════════════════════════════ */
     async loadSettings(): Promise<void> {
-        this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+        try {
+            const data = await this.loadData();
+            this.settings = Object.assign({}, DEFAULT_SETTINGS, data || {});
+        } catch (e) {
+            /* 🆕 اگه data.json وجود نداشت یا خراب بود، از پیش‌فرض استفاده کن */
+            console.debug('[Git Tasks] No settings file, using defaults');
+            this.settings = Object.assign({}, DEFAULT_SETTINGS);
+        }
     }
 
     async saveSettings(): Promise<void> {
-        await this.saveData(this.settings);
+        try {
+            await this.saveData(this.settings);
+        } catch (e) {
+            console.warn('[Git Tasks] Failed to save settings:', e);
+        }
     }
 
     restartAutoSync(): void {
