@@ -1,17 +1,18 @@
 /* ════════════════════════════════════════════════════════════
-   🎨 استایل‌های Git Tasks v0.1.6
-   ✅ Toast بالای صفحه
-   ✅ سوییچ تاگل معکوس در RTL
-   ✅ حذف اوت‌لاین عنوان‌ها (فقط خط زیرین)
-   ✅ RTL ساده و ایمن (بدون بهم‌ریختگی)
+   🎨 استایل‌های Git Tasks v0.1.7
+   ✅ Toast با فاصله هوشمند از بالا (موبایل/دسکتاپ)
+   ✅ پدینگ ۵px زیر جداکننده‌های تنظیمات
    ════════════════════════════════════════════════════════════ */
 
 /* ═══════════════════════════════════════════════════════════
-   🍞 Toast — بالای صفحه، شبیه اعلان‌های آبسیدین
+   🍞 Toast — فاصله هوشمند از بالا
+   ✅ دسکتاپ: ۲۰px از بالا
+   ✅ موبایل: در نظر گرفتن نوار موبایل Obsidian + safe area
    ═══════════════════════════════════════════════════════════ */
 .git-tasks-toast-container {
     position: fixed !important;
-    top: max(12px, env(safe-area-inset-top)) !important;
+    /* موبایل: بالاتر از نوار ناوبری آبسیدین + safe area */
+    top: calc(max(12px, env(safe-area-inset-top)) + 48px) !important;
     left: 50% !important;
     transform: translateX(-50%) !important;
     z-index: 2147483647 !important;
@@ -353,27 +354,23 @@
    ⚙️ تنظیمات — RTL ساده و ایمن
    ═══════════════════════════════════════════════════════════ */
 
-/* ساده‌ترین رویکرد: فقط direction: rtl روی کانتینر تنظیمات */
 .git-tasks-settings[dir="rtl"] {
     direction: rtl;
 }
 
-/* متن‌های تنظیمات راست‌چین */
 .git-tasks-settings[dir="rtl"] .setting-item-info,
 .git-tasks-settings[dir="rtl"] .setting-item-name,
 .git-tasks-settings[dir="rtl"] .setting-item-description {
     text-align: right;
 }
 
-/* 🔥 سوییچ تاگل: معکوس در RTL
-   در LTR: ON = thumb به راست
-   در RTL: ON = thumb به چپ */
+/* سوییچ تاگل: معکوس در RTL */
 .git-tasks-settings[dir="rtl"] .checkbox-container,
 .git-tasks-rtl .checkbox-container {
     transform: scaleX(-1);
 }
 
-/* ورودی‌های متنی — به جز اونایی که LTR اجباری هستن */
+/* ورودی‌های متنی */
 .git-tasks-settings[dir="rtl"] input[type="text"]:not([dir="ltr"]),
 .git-tasks-settings[dir="rtl"] input[type="number"]:not([dir="ltr"]),
 .git-tasks-settings[dir="rtl"] textarea {
@@ -381,14 +378,14 @@
     text-align: right;
 }
 
-/* ورودی‌های LTR اجباری (توکن، مخزن، شاخه) */
 .git-tasks-settings input[dir="ltr"] {
     direction: ltr !important;
     text-align: left !important;
 }
 
 /* ═══════════════════════════════════════════════════════════
-   📌 عنوان‌ها در تنظیمات: حذف اوت‌لاین، فقط خط زیرین
+   📌 عنوان‌ها در تنظیمات: بدون اوت‌لاین، فقط خط زیرین
+   ✅ پدینگ ۵px زیر جداکننده (فاصله المان بعدی)
    ═══════════════════════════════════════════════════════════ */
 .git-tasks-settings .setting-item-heading,
 .git-tasks-settings .setting-item-heading .setting-item-info,
@@ -403,16 +400,18 @@
 .git-tasks-settings .setting-item-heading {
     border-bottom: 1px solid var(--background-modifier-border) !important;
     padding: 12px 0 8px 0 !important;
-    margin-bottom: 4px !important;
+    /* 🆕 فاصله‌ی ۵ پیکسلی از المان زیرین */
+    margin-bottom: 5px !important;
 }
 
-/* آیتم بعدی بعد از heading: بدون border-top */
+/* 🆕 پدینگ بالای المانی که بعد از heading میاد */
 .git-tasks-settings .setting-item-heading + .setting-item {
     border-top: none !important;
+    padding-top: 5px !important;
 }
 
 /* ═══════════════════════════════════════════════════════════
-   🔥 مودال‌ها در RTL — فقط چیزهای لازم، بدون overrides مخرب
+   🔥 مودال‌ها در RTL
    ═══════════════════════════════════════════════════════════ */
 .git-tasks-modal-content[dir="rtl"] .setting-item-info,
 .git-tasks-modal-content[dir="rtl"] .setting-item-name,
@@ -426,12 +425,10 @@
     text-align: right;
 }
 
-/* دکمه‌های مودال: در RTL به چپ (برعکس انگلیسی) */
 .git-tasks-modal-content[dir="rtl"] .git-tasks-modal-buttons {
     justify-content: flex-start !important;
 }
 
-/* سوییچ تاگل در مودال (اگه بود) */
 .git-tasks-modal-content[dir="rtl"] .checkbox-container {
     transform: scaleX(-1);
 }
@@ -448,10 +445,20 @@
     .git-tasks-stat-value { font-size: 18px; }
     .git-tasks-stat-label { font-size: 10px; }
     .git-tasks-tab { font-size: 11.5px; padding: 6px 8px; }
+
+    /* 🆕 Toast روی موبایل: فاصله‌ی بیشتر از بالا
+       (نوار عنوان آبسیدین موبایل + safe area + فاصله تنفس) */
     .git-tasks-toast-container {
-        top: max(8px, env(safe-area-inset-top)) !important;
+        top: calc(max(16px, env(safe-area-inset-top)) + 56px) !important;
         max-width: none !important;
-        padding: 0 8px !important;
+        padding: 0 10px !important;
     }
     .git-tasks-toast { padding: 10px 14px; font-size: 12px; }
+}
+
+/* 🆕 تبلت: فاصله بین موبایل و دسکتاپ */
+@media (min-width: 601px) and (max-width: 900px) {
+    .git-tasks-toast-container {
+        top: calc(max(14px, env(safe-area-inset-top)) + 24px) !important;
+    }
 }
