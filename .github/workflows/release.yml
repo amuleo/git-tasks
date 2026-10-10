@@ -1,0 +1,72 @@
+name: Release Obsidian Plugin
+
+# این workflow وقتی اجرا می‌شه که یه tag با الگوی "عدد.عدد.عدد" پوش بشه
+# مثال: 0.1.0 یا 1.2.3
+on:
+  push:
+    tags:
+      - "*.*.*"
+
+# دسترسی‌های لازم برای ساخت release
+permissions:
+  contents: write
+  id-token: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      # ───── قدم ۱: چک‌اوت کردن مخزن ─────
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # ───── قدم ۲: نصب Node.js ─────
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'npm'
+
+      # ───── قدم ۳: نصب وابستگی‌ها ─────
+      - name: Install dependencies
+        run: npm ci
+
+      # ───── قدم ۴: بیلد کردن پلاگین ─────
+      - name: Build plugin
+        run: npm run build
+
+      # ───── قدم ۵: استخراج نسخه از نام tag ─────
+      # مثلاً اگه tag = "0.1.0" باشه، TAG_NAME = "0.1.0" می‌شه
+      - name: Get version from tag
+        id: version
+        run: |
+          echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+
+      # ───── قدم ۶: چک کردن هماهنگی نسخه ─────
+      # مطمئن می‌شیم نسخه توی manifest.json با tag یکی‌ست
+      - name: Verify manifest version matches tag
+        run: |
+          MANIFEST_VERSION=$(node -p "require('./manifest.json').version")
+          TAG_VERSION="${{ steps.version.outputs.tag }}"
+          if [ "$MANIFEST_VERSION" != "$TAG_VERSION" ]; then
+            echo "❌ نسخه‌ی manifest.json ($MANIFEST_VERSION) با tag ($TAG_VERSION) هماهنگ نیست!"
+            exit 1
+          fi
+          echo "✅ نسخه هماهنگه: $MANIFEST_VERSION"
+
+      # ───── قدم ۷: ساخت Release و آپلود فایل‌ها ─────
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.tag }}
+          name: ${{ steps.version.outputs.tag }}
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+          files: |
+            main.js
+            manifest.json
+            styles.css
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
