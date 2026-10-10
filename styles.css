@@ -1,7 +1,7 @@
 /* ════════════════════════════════════════════════════════════
    🎨 استایل‌های Git Tasks v0.1.7
    ✅ Toast با فاصله هوشمند از بالا (موبایل/دسکتاپ)
-   ✅ پدینگ ۵px زیر جداکننده‌های تنظیمات
+   ✅ پدینگ ۱۰px زیر جداکننده‌های تنظیمات
    ════════════════════════════════════════════════════════════ */
 
 /* ═══════════════════════════════════════════════════════════
@@ -385,7 +385,7 @@
 
 /* ═══════════════════════════════════════════════════════════
    📌 عنوان‌ها در تنظیمات: بدون اوت‌لاین، فقط خط زیرین
-   ✅ پدینگ ۵px زیر جداکننده (فاصله المان بعدی)
+   ✅ پدینگ ۱۰px زیر جداکننده (فاصله المان بعدی)
    ═══════════════════════════════════════════════════════════ */
 .git-tasks-settings .setting-item-heading,
 .git-tasks-settings .setting-item-heading .setting-item-info,
@@ -400,14 +400,14 @@
 .git-tasks-settings .setting-item-heading {
     border-bottom: 1px solid var(--background-modifier-border) !important;
     padding: 12px 0 8px 0 !important;
-    /* 🆕 فاصله‌ی ۵ پیکسلی از المان زیرین */
-    margin-bottom: 5px !important;
+    /* 🆕 فاصله‌ی ۱۰ پیکسلی از المان زیرین */
+    margin-bottom: 10px !important;
 }
 
 /* 🆕 پدینگ بالای المانی که بعد از heading میاد */
 .git-tasks-settings .setting-item-heading + .setting-item {
     border-top: none !important;
-    padding-top: 5px !important;
+    padding-top: 10px !important;
 }
 
 /* ═══════════════════════════════════════════════════════════
