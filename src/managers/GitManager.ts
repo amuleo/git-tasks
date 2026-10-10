@@ -1,5 +1,6 @@
 /* ════════════════════════════════════════════════════════════
    🐙 Git Manager — با Action Queue برای جلوگیری از race condition
+   ✅ رفع باگ: خواندن description از body
    ════════════════════════════════════════════════════════════ */
 
 import type { GitTasksSettings, Task, Category, CategoryFile, IndexFile, CompletedStats } from '../types';
@@ -26,10 +27,6 @@ const DEFAULT_CATEGORIES: CategoryFile = {
 export class GitManager {
     /* ═══════════════════════════════════════════════════
        🔒 صف نوشتن (Action Queue)
-       تمام عملیات نوشتن یکی‌یکی انجام می‌شن تا:
-       - SHA فایل‌ها قاطی نشن
-       - درخواست‌ها Race نکنن
-       - کاربر هیچ عملی رو از دست نده
        ═══════════════════════════════════════════════════ */
     private writeChain: Promise<unknown> = Promise.resolve();
 
@@ -42,7 +39,6 @@ export class GitManager {
     /* ───── صف‌گذار برای عملیات نوشتن ───── */
     private serialize<T>(fn: () => Promise<T>): Promise<T> {
         const next = this.writeChain.then(fn, fn);
-        /* جلوگیری از unhandled rejection توی زنجیره */
         this.writeChain = next.catch(() => undefined);
         return next;
     }
@@ -163,12 +159,15 @@ export class GitManager {
         if (!file) return null;
 
         const meta = this.parseFrontmatter(file.content);
+        /* 🔥 NEW: محتوای body رو هم می‌خونیم (توضیحات) */
+        const body = this.extractBody(file.content);
         const id = folderPath.split('/').pop() || '';
 
         return {
             id,
             title: meta.title || id,
-            description: meta.description || '',
+            /* 🔥 توضیحات: اول از body، اگه خالی بود از meta (پشتیبانی از فایل‌های قدیمی) */
+            description: body || meta.description || '',
             category: meta.category || null,
             completed: meta.completed === 'true' || meta.completed === true,
             deleted: meta.deleted === 'true' || meta.deleted === true,
@@ -321,6 +320,12 @@ export class GitManager {
             out[key] = val;
         }
         return out;
+    }
+
+    /* 🔥 NEW: استخراج محتوای body (بعد از frontmatter) */
+    private extractBody(content: string): string {
+        const match = content.match(/^---\n[\s\S]*?\n---\n?([\s\S]*)$/);
+        return match ? match[1].trim() : '';
     }
 
     private escapeYaml(s: string): string {
